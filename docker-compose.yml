@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  opendesktop:
+    build: .
+    container_name: opendesktop
+    restart: unless-stopped
+    ports:
+      - "4444:4444"  # API Gateway
+    volumes:
+      - opendesktop-data:/root/.opendesktop
+      - /var/run/docker.sock:/var/run/docker.sock  # For Docker control
+    environment:
+      - NODE_ENV=production
+      - OPENDESKTOP_PROVIDER=${OPENDESKTOP_PROVIDER:-openrouter}
+      - OPENDESKTOP_API_KEY=${OPENDESKTOP_API_KEY:-}
+      - OPENDESKTOP_MODEL=${OPENDESKTOP_MODEL:-anthropic/claude-3.5-sonnet}
+    stdin_open: true
+    tty: true
+    networks:
+      - opendesktop-net
+
+  # Optional: Local Ollama for free AI
+  ollama:
+    image: ollama/ollama:latest
+    container_name: opendesktop-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - opendesktop-net
+    profiles:
+      - with-ollama
+
+volumes:
+  opendesktop-data:
+  ollama-data:
+
+networks:
+  opendesktop-net:
+    driver: bridge

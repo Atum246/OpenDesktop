@@ -44,6 +44,12 @@ const TrustSafety = require('../trust-safety/index.js');
 const UniversalToolkit = require('../universal-toolkit/index.js');
 const BrowserEngine = require('../browser-engine/index.js');
 const ReverseEngineering = require('../reverse-engineering/index.js');
+const TaskScheduler = require('../scheduler/index.js');
+const BackupManager = require('../backup/index.js');
+const PluginMarketplace = require('../marketplace/index.js');
+const PerformanceMonitor = require('../monitor/index.js');
+const NotificationCenter = require('../notifications/index.js');
+const ConfigManager = require('../config-manager/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -88,6 +94,14 @@ class OpenDesktopEngine {
     this.toolkit = new UniversalToolkit(this.config, this.provider);
     this.browser = new BrowserEngine(this.config, this.provider);
     this.reverseEng = new ReverseEngineering(this.config, this.provider);
+
+    // ═══ NEW FEATURES ═══
+    this.scheduler = new TaskScheduler(this.config, this.automation, this.provider);
+    this.backup = new BackupManager(this.config);
+    this.marketplace = new PluginMarketplace(this.config, this.plugins);
+    this.monitor = new PerformanceMonitor(this.config);
+    this.notifications = new NotificationCenter(this.config);
+    this.configManager = new ConfigManager(this.config);
 
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
@@ -1431,6 +1445,319 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
             console.log(chalk.hex('#00FFFF')(`  ${coin}: $${data.usd}`) + chalk.hex(data.usd_24h_change > 0 ? '#00FF40' : '#FF0000')(` (${data.usd_24h_change?.toFixed(2)}%)`));
           }
         } else console.log(chalk.hex('#FF0000')(`❌ ${cryptoResult.error}`));
+        break;
+      }
+
+      // ═══ TASK SCHEDULER ═══
+      case '/schedule': {
+        const schedStatus = this.scheduler.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('⏰ Task Scheduler'),
+          '',
+          chalk.hex('#00FFFF')('Running: ') + (schedStatus.running ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('Total Jobs: ') + schedStatus.totalJobs,
+          chalk.hex('#00FFFF')('Enabled: ') + schedStatus.enabledJobs,
+          chalk.hex('#00FFFF')('Next Job: ') + schedStatus.nextJob,
+          '',
+          chalk.hex('#888888')('  /schedule-list           — List all jobs'),
+          chalk.hex('#888888')('  /schedule-add <name> <action> — Add job'),
+          chalk.hex('#888888')('  /schedule-daily <name> <time> <action> — Daily job'),
+          chalk.hex('#888888')('  /schedule-run <id>       — Run job now')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/schedule-list': {
+        const jobs = this.scheduler.listJobs();
+        if (!jobs.length) console.log(chalk.hex('#888888')('  No scheduled jobs.'));
+        else jobs.forEach(j => console.log(chalk.hex('#00FFFF')(`  ${j.name}`) + chalk.hex('#888888')(` [${j.type}] ${j.enabled ? '✅' : '❌'} Runs: ${j.runCount} Next: ${j.nextRun}`)));
+        break;
+      }
+      case '/schedule-daily': {
+        const [schedName, schedTime, ...schedAction] = args.split(' ');
+        if (!schedName || !schedTime) { console.log(chalk.hex('#FF0000')('Usage: /schedule-daily <name> <HH:MM> <action>')); break; }
+        const schedResult = this.scheduler.scheduleDaily(schedName, schedTime, { type: 'chat', value: schedAction.join(' ') });
+        console.log(chalk.hex('#00FF40')(`✅ Scheduled: ${schedName} daily at ${schedTime}`));
+        break;
+      }
+      case '/schedule-run': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /schedule-run <job-id>')); break; }
+        const runResult = await this.scheduler.runJob(args);
+        console.log(runResult.success ? chalk.hex('#00FF40')(`✅ Job executed: ${runResult.name}`) : chalk.hex('#FF0000')(`❌ ${runResult.error}`));
+        break;
+      }
+
+      // ═══ BACKUP MANAGER ═══
+      case '/backup': {
+        const backupStatus = this.backup.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('💾 Backup Manager'),
+          '',
+          chalk.hex('#00FFFF')('Total Backups: ') + backupStatus.totalBackups,
+          chalk.hex('#00FFFF')('Total Size: ') + backupStatus.totalSize,
+          chalk.hex('#00FFFF')('Last Backup: ') + backupStatus.lastBackup,
+          chalk.hex('#00FFFF')('Encrypted: ') + backupStatus.encryptedBackups,
+          '',
+          chalk.hex('#888888')('  /backup-create           — Create backup'),
+          chalk.hex('#888888')('  /backup-create-enc <pw>  — Encrypted backup'),
+          chalk.hex('#888888')('  /backup-list             — List backups'),
+          chalk.hex('#888888')('  /backup-restore <name>   — Restore backup'),
+          chalk.hex('#888888')('  /backup-verify <name>    — Verify integrity'),
+          chalk.hex('#888888')('  /backup-cleanup [n]      — Keep last n backups')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/backup-create': {
+        const spin = ora('💾 Creating backup...').start();
+        const backupResult = await this.backup.createBackup();
+        spin.stop();
+        console.log(backupResult.success ? chalk.hex('#00FF40')(`✅ Backup: ${backupResult.name} (${backupResult.sizeHuman})`) : chalk.hex('#FF0000')(`❌ ${backupResult.error}`));
+        break;
+      }
+      case '/backup-create-enc': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /backup-create-enc <password>')); break; }
+        const spin = ora('🔐 Creating encrypted backup...').start();
+        const encResult = await this.backup.createEncryptedBackup(args);
+        spin.stop();
+        console.log(encResult.success ? chalk.hex('#00FF40')(`✅ Encrypted backup created`) : chalk.hex('#FF0000')(`❌ ${encResult.error}`));
+        break;
+      }
+      case '/backup-list': {
+        const backups = this.backup.listBackups();
+        if (!backups.length) console.log(chalk.hex('#888888')('  No backups found.'));
+        backups.forEach(b => console.log(chalk.hex('#00FFFF')(`  ${b.name}`) + chalk.hex('#888888')(` ${b.size} ${b.encrypted ? '🔐' : ''} ${b.timestamp}`)));
+        break;
+      }
+      case '/backup-restore': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /backup-restore <name>')); break; }
+        const restoreResult = await this.backup.restoreBackup(args);
+        console.log(restoreResult.success ? chalk.hex('#00FF40')(`✅ Restored: ${args}`) : chalk.hex('#FF0000')(`❌ ${restoreResult.error}`));
+        break;
+      }
+      case '/backup-verify': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /backup-verify <name>')); break; }
+        const verifyResult = this.backup.verifyBackup(args);
+        console.log(verifyResult.valid ? chalk.hex('#00FF40')(`✅ Backup valid: ${args}`) : chalk.hex('#FF0000')(`❌ ${verifyResult.error}`));
+        break;
+      }
+
+      // ═══ PLUGIN MARKETPLACE ═══
+      case '/marketplace': {
+        const mktStatus = this.marketplace.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🛒 Plugin Marketplace'),
+          '',
+          chalk.hex('#00FFFF')('Installed: ') + mktStatus.installedPlugins,
+          chalk.hex('#00FFFF')('Total Installs: ') + mktStatus.totalInstalls,
+          '',
+          chalk.hex('#888888')('  /marketplace-browse      — Browse plugins'),
+          chalk.hex('#888888')('  /marketplace-search <q>  — Search plugins'),
+          chalk.hex('#888888')('  /marketplace-install <n> — Install plugin'),
+          chalk.hex('#888888')('  /marketplace-update <n>  — Update plugin'),
+          chalk.hex('#888888')('  /marketplace-list        — List installed'),
+          chalk.hex('#888888')('  /marketplace-updates     — Check updates')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/marketplace-browse': {
+        const spin = ora('🛒 Browsing marketplace...').start();
+        const browseResult = await this.marketplace.browse({ search: args });
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Found ${browseResult.total} plugins (${browseResult.source}):\n`));
+        browseResult.plugins.slice(0, 15).forEach(p => console.log(chalk.hex('#00FFFF')(`  ${p.name}`) + chalk.hex('#888888')(` — ${p.description}`)));
+        break;
+      }
+      case '/marketplace-search': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /marketplace-search <query>')); break; }
+        const searchResult = await this.marketplace.search(args);
+        console.log(chalk.hex('#00FF40')(`✅ Found ${searchResult.total} plugins:\n`));
+        searchResult.plugins.forEach(p => console.log(chalk.hex('#00FFFF')(`  ${p.name}`) + chalk.hex('#888888')(` — ${p.description}`)));
+        break;
+      }
+      case '/marketplace-install': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /marketplace-install <plugin-name>')); break; }
+        const spin = ora(`📦 Installing ${args}...`).start();
+        const installResult = await this.marketplace.install(args);
+        spin.stop();
+        console.log(installResult.success ? chalk.hex('#00FF40')(`✅ Installed: ${args}`) : chalk.hex('#FF0000')(`❌ ${installResult.error}`));
+        break;
+      }
+      case '/marketplace-list': {
+        const installed = this.marketplace.listInstalled();
+        if (!installed.length) console.log(chalk.hex('#888888')('  No plugins installed.'));
+        installed.forEach(p => console.log(chalk.hex('#00FFFF')(`  ${p.name}@${p.version}`) + chalk.hex('#888888')(` — ${p.description}`)));
+        break;
+      }
+      case '/marketplace-updates': {
+        const spin = ora('🔄 Checking updates...').start();
+        const updates = await this.marketplace.checkUpdates();
+        spin.stop();
+        if (!updates.total) console.log(chalk.hex('#00FF40')('✅ All plugins up to date!'));
+        updates.updates.forEach(u => console.log(chalk.hex('#00FFFF')(`  ${u.name}`) + chalk.hex('#888888')(` ${u.current} → ${u.latest}`)));
+        break;
+      }
+
+      // ═══ PERFORMANCE MONITOR ═══
+      case '/monitor': {
+        const current = this.monitor.getCurrent();
+        const report = this.monitor.generateReport();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('📊 Performance Monitor'),
+          '',
+          chalk.hex('#FF0000')('═══ CPU ═══'),
+          chalk.hex('#00FFFF')('  Current: ') + `${current.cpu}%`,
+          chalk.hex('#00FFFF')('  Average: ') + `${report.summary.cpu.average}%`,
+          chalk.hex('#00FFFF')('  Model: ') + current.cpuModel,
+          chalk.hex('#00FFFF')('  Cores: ') + current.cpuCount,
+          '',
+          chalk.hex('#FF0000')('═══ MEMORY ═══'),
+          chalk.hex('#00FFFF')('  Used: ') + `${current.memory.usedHuman} / ${current.memory.totalHuman} (${current.memory.percent}%)`,
+          '',
+          chalk.hex('#FF0000')('═══ DISK ═══'),
+          chalk.hex('#00FFFF')('  Usage: ') + `${current.disk.percent}%`,
+          chalk.hex('#00FFFF')('  Available: ') + `${current.disk.available}`,
+          '',
+          chalk.hex('#FF0000')('═══ NETWORK ═══'),
+          chalk.hex('#00FFFF')('  Online: ') + (current.network.online ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('  Latency: ') + `${current.network.latency}ms`,
+          '',
+          chalk.hex('#FF0000')('═══ SYSTEM ═══'),
+          chalk.hex('#00FFFF')('  Uptime: ') + report.summary.uptime,
+          chalk.hex('#00FFFF')('  Load: ') + current.loadAvg.map(l => l.toFixed(2)).join(', '),
+          chalk.hex('#00FFFF')('  Platform: ') + `${current.platform} ${current.arch}`,
+          '',
+          chalk.hex('#888888')('  /monitor-start — Start monitoring'),
+          chalk.hex('#888888')('  /monitor-stop  — Stop monitoring'),
+          chalk.hex('#888888')('  /monitor-alerts — Active alerts')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/monitor-start': {
+        const startResult = this.monitor.start();
+        console.log(chalk.hex('#00FF40')(`✅ Monitoring started (interval: ${startResult.interval}ms)`));
+        break;
+      }
+      case '/monitor-stop': {
+        this.monitor.stop();
+        console.log(chalk.hex('#00FF40')('✅ Monitoring stopped'));
+        break;
+      }
+      case '/monitor-alerts': {
+        const alerts = this.monitor.getActiveAlerts();
+        if (!alerts.length) console.log(chalk.hex('#00FF40')('✅ No active alerts'));
+        alerts.forEach(a => console.log(chalk.hex(a.severity === 'high' ? '#FF0000' : '#FFD700')(`  ⚠️ ${a.message}`)));
+        break;
+      }
+
+      // ═══ NOTIFICATION CENTER ═══
+      case '/notifications': {
+        const notifStatus = this.notifications.getStatus();
+        const unread = this.notifications.getUnread();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔔 Notification Center'),
+          '',
+          chalk.hex('#00FFFF')('Total: ') + notifStatus.total,
+          chalk.hex('#00FFFF')('Unread: ') + notifStatus.unread,
+          chalk.hex('#00FFFF')('Channels: ') + notifStatus.channels,
+          '',
+          ...unread.slice(0, 5).map(n => chalk.hex('#FFD700')(`  ${n.icon} ${n.title}`) + chalk.hex('#888888')(` — ${n.body.slice(0, 50)}`)),
+          '',
+          chalk.hex('#888888')('  /notifications-recent   — Recent notifications'),
+          chalk.hex('#888888')('  /notifications-read     — Mark all read'),
+          chalk.hex('#888888')('  /notifications-clear    — Clear history'),
+          chalk.hex('#888888')('  /notify <channel> <msg> — Send notification')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/notifications-recent': {
+        const recent = this.notifications.getRecent(10);
+        if (!recent.length) console.log(chalk.hex('#888888')('  No notifications.'));
+        recent.forEach(n => {
+          const time = new Date(n.timestamp).toLocaleTimeString();
+          const readMark = n.read ? '  ' : '🔴';
+          console.log(chalk.hex('#888888')(`  [${time}]`) + ` ${readMark} ${n.icon} ${chalk.hex('#00FFFF')(n.title)} — ${n.body.slice(0, 60)}`);
+        });
+        break;
+      }
+      case '/notifications-read': {
+        const markResult = this.notifications.markAllRead();
+        console.log(chalk.hex('#00FF40')(`✅ Marked ${markResult.marked} notifications as read`));
+        break;
+      }
+      case '/notifications-clear': {
+        this.notifications.clearHistory();
+        console.log(chalk.hex('#00FF40')('✅ Notification history cleared'));
+        break;
+      }
+      case '/notify': {
+        const [notifChannel, ...notifParts] = args.split(' ');
+        if (!notifChannel || !notifParts.length) { console.log(chalk.hex('#FF0000')('Usage: /notify <channel> <message>')); break; }
+        const notifResult = this.notifications.notify(notifChannel, 'OpenDesktop', notifParts.join(' '));
+        console.log(notifResult.sent ? chalk.hex('#00FF40')('✅ Notification sent') : chalk.hex('#FF0000')(`❌ ${notifResult.reason || 'Failed'}`));
+        break;
+      }
+
+      // ═══ CONFIG MANAGER ═══
+      case '/profiles': {
+        const profiles = this.configManager.listProfiles();
+        const templates = Object.keys(this.configManager.templates);
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('⚙️ Config Manager'),
+          '',
+          chalk.hex('#FF0000')('═══ PROFILES ═══'),
+          ...profiles.map(p => chalk.hex('#00FFFF')(`  ${p.name}`) + chalk.hex('#888888')(` — ${p.description || 'No description'}`)),
+          profiles.length === 0 ? chalk.hex('#888888')('  No saved profiles') : '',
+          '',
+          chalk.hex('#FF0000')('═══ TEMPLATES ═══'),
+          ...templates.map(t => chalk.hex('#00FFFF')(`  ${t}`)),
+          '',
+          chalk.hex('#888888')('  /profile-save <name>    — Save current config'),
+          chalk.hex('#888888')('  /profile-load <name>    — Load profile'),
+          chalk.hex('#888888')('  /profile-apply <tmpl>   — Apply template'),
+          chalk.hex('#888888')('  /profile-export         — Export config'),
+          chalk.hex('#888888')('  /profile-import <file>  — Import config'),
+          chalk.hex('#888888')('  /profile-validate       — Validate config'),
+          chalk.hex('#888888')('  /profile-reset          — Reset to defaults')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/profile-save': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /profile-save <name>')); break; }
+        const saveResult = this.configManager.saveProfile(args);
+        console.log(saveResult.saved ? chalk.hex('#00FF40')(`✅ Profile saved: ${args}`) : chalk.hex('#FF0000')('Failed'));
+        break;
+      }
+      case '/profile-load': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /profile-load <name>')); break; }
+        const loadResult = this.configManager.loadProfile(args);
+        console.log(loadResult.loaded ? chalk.hex('#00FF40')(`✅ Profile loaded: ${args}`) : chalk.hex('#FF0000')(`❌ ${loadResult.error}`));
+        break;
+      }
+      case '/profile-apply': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /profile-apply <template-name>')); break; }
+        const applyResult = this.configManager.applyTemplate(args);
+        console.log(applyResult.applied ? chalk.hex('#00FF40')(`✅ Template applied: ${args} — ${applyResult.description}`) : chalk.hex('#FF0000')(`❌ ${applyResult.error}`));
+        break;
+      }
+      case '/profile-export': {
+        const exportResult = this.configManager.exportConfig();
+        console.log(chalk.hex('#00FF40')(`✅ Config exported: ${exportResult.path}`));
+        break;
+      }
+      case '/profile-import': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /profile-import <file-path>')); break; }
+        const importResult = this.configManager.importConfig(args, { merge: true });
+        console.log(importResult.imported ? chalk.hex('#00FF40')('✅ Config imported') : chalk.hex('#FF0000')(`❌ ${importResult.error}`));
+        break;
+      }
+      case '/profile-validate': {
+        const validation = this.configManager.validateConfig();
+        console.log(validation.valid ? chalk.hex('#00FF40')('✅ Config is valid') : chalk.hex('#FF0000')('❌ Config has issues:'));
+        validation.issues.forEach(i => console.log(chalk.hex(i.severity === 'error' ? '#FF0000' : '#FFD700')(`  ${i.severity}: ${i.message}`)));
+        break;
+      }
+      case '/profile-reset': {
+        const resetResult = this.configManager.resetToDefaults();
+        console.log(chalk.hex('#00FF40')(`✅ Config reset to defaults (backup: ${resetResult.backup})`));
         break;
       }
 

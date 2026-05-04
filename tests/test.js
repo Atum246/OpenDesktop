@@ -107,13 +107,14 @@ async function runTests() {
   // === ENGINE ===
   const Engine = require('../src/core/engine.js');
   test('Engine: init', () => { new Engine(); });
-  test('Engine: ALL 38 subsystems', () => {
+  test('Engine: ALL 44 subsystems', () => {
     const e = new Engine();
     ['provider', 'memory', 'automation', 'vision', 'plugins', 'messaging', 'hotkey', 'voice',
      'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings',
      'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter',
      'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer',
-     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety', 'toolkit', 'browser', 'reverseEng']
+     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety', 'toolkit', 'browser', 'reverseEng',
+     'scheduler', 'backup', 'marketplace', 'monitor', 'notifications', 'configManager']
       .forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
   test('Engine: AI name config', () => { const e = new Engine(); if (!e.aiName) throw new Error(); });
@@ -203,14 +204,49 @@ async function runTests() {
   test('Toolkit: uuid', () => { const t = new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); const u = t.generateUUID(); if (!u || u.length < 10) throw new Error(); });
   test('Toolkit: json ops', () => { const t = new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); const v = t.jsonOperation('validate', '{"a":1}'); if (!v.valid) throw new Error(); });
 
+  // === NEW FEATURES ===
+  const TaskScheduler = require('../src/scheduler/index.js');
+  test('Scheduler: init', () => { new TaskScheduler(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); });
+  test('Scheduler: status', () => { const s = new TaskScheduler(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); if (!('running' in s.getStatus())) throw new Error(); });
+  test('Scheduler: add job', () => { const s = new TaskScheduler(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); const r = s.addJob({ name: 'test', type: 'once', action: { type: 'command', value: 'echo test' } }); if (!r.id) throw new Error(); });
+  test('Scheduler: list jobs', () => { const s = new TaskScheduler(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); if (!Array.isArray(s.listJobs())) throw new Error(); });
+
+  const BackupManager = require('../src/backup/index.js');
+  test('Backup: init', () => { new BackupManager(new Config()); });
+  test('Backup: status', () => { const b = new BackupManager(new Config()); if (!('totalBackups' in b.getStatus())) throw new Error(); });
+  test('Backup: list', () => { const b = new BackupManager(new Config()); if (!Array.isArray(b.listBackups())) throw new Error(); });
+
+  const PluginMarketplace = require('../src/marketplace/index.js');
+  test('Marketplace: init', () => { new PluginMarketplace(new Config(), new PluginManager(new Config(), {})); });
+  test('Marketplace: status', () => { const m = new PluginMarketplace(new Config(), new PluginManager(new Config(), {})); if (!('installedPlugins' in m.getStatus())) throw new Error(); });
+  test('Marketplace: list installed', () => { const m = new PluginMarketplace(new Config(), new PluginManager(new Config(), {})); if (!Array.isArray(m.listInstalled())) throw new Error(); });
+
+  const PerformanceMonitor = require('../src/monitor/index.js');
+  test('Monitor: init', () => { new PerformanceMonitor(new Config()); });
+  test('Monitor: status', () => { const m = new PerformanceMonitor(new Config()); if (!('running' in m.getStatus())) throw new Error(); });
+  test('Monitor: current', () => { const m = new PerformanceMonitor(new Config()); const c = m.getCurrent(); if (!('cpu' in c) || !('memory' in c)) throw new Error(); });
+
+  const NotificationCenter = require('../src/notifications/index.js');
+  test('Notifications: init', () => { new NotificationCenter(new Config()); });
+  test('Notifications: status', () => { const n = new NotificationCenter(new Config()); if (!('total' in n.getStatus())) throw new Error(); });
+  test('Notifications: send', () => { const n = new NotificationCenter(new Config()); const r = n.notify('system', 'Test', 'Hello'); if (!r.sent) throw new Error(); });
+  test('Notifications: channels', () => { const n = new NotificationCenter(new Config()); if (n.listChannels().length < 5) throw new Error(); });
+
+  const ConfigManager = require('../src/config-manager/index.js');
+  test('ConfigManager: init', () => { new ConfigManager(new Config()); });
+  test('ConfigManager: status', () => { const c = new ConfigManager(new Config()); if (!('profiles' in c.getStatus())) throw new Error(); });
+  test('ConfigManager: validate', () => { const c = new ConfigManager(new Config()); const v = c.validateConfig(); if (!('valid' in v)) throw new Error(); });
+  test('ConfigManager: templates', () => { const c = new ConfigManager(new Config()); if (Object.keys(c.templates).length < 3) throw new Error(); });
+
   // === STRUCTURE ===
-  test('Structure: ALL 30 module dirs', () => {
+  test('Structure: ALL 37 module dirs', () => {
     ['core', 'providers', 'vision', 'automation', 'memory', 'messaging', 'gui', 'cli', 'plugins',
      'hotkey', 'voice', 'code-executor', 'deployer', 'learning', 'skill-creator', 'workflows',
      'persona', 'settings', 'self-improve', 'sub-agents', 'social-media', 'research', 'adaptive',
      'code-rewriter', 'web-search', 'iot', 'security', 'program-installer', 'orchestrator', 'model-trainer',
      'brain', 'proactive', 'os-integration', 'visual-understanding', 'evolution', 'api-gateway',
-     'code-intelligence', 'trust-safety']
+     'code-intelligence', 'trust-safety', 'browser-engine', 'reverse-engineering',
+     'scheduler', 'backup', 'marketplace', 'monitor', 'notifications', 'config-manager']
       .forEach(d => { if (!fs.existsSync(path.join(__dirname, '..', 'src', d))) throw new Error(`Missing: src/${d}`); });
   });
 
