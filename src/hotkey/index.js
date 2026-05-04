@@ -99,6 +99,7 @@ echo "trigger" > ${pipePath}
     this.debounce = true;
     setTimeout(() => this.debounce = false, 500);
     if (this.onTrigger) this.onTrigger();
+    this.audit('hotkey_triggered', { hotkey: this.hotkey, timestamp: new Date().toISOString() });
     return { triggered: true, timestamp: new Date().toISOString() };
   }
 

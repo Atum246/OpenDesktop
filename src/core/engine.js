@@ -69,7 +69,14 @@ class OpenDesktopEngine {
     this.isRunning = false;
   }
 
-  _onHotkey() { console.log(chalk.hex('#FF0000')(`\n⚡ ${this.aiName} summoned! ⚡\n`)); }
+  _onHotkey() {
+    console.log(chalk.hex('#FF0000')(`\n⚡ ${this.aiName} summoned! ⚡\n`));
+    // Launch hybrid GUI
+    try {
+      const { summon } = require('../gui/index.js');
+      summon().catch(() => {});
+    } catch {}
+  }
 
   async start() {
     this.isRunning = true;
