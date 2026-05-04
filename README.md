@@ -70,13 +70,27 @@
 
 ## 🚀 Quick Start
 
-### One-Line Install
+### Windows (PowerShell — Recommended)
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.ps1 | iex"
+```
+
+This handles everything: installs Node.js if missing, installs OpenDesktop globally, and runs setup.
+
+### Windows (Command Prompt / cmd)
+
+```cmd
+curl -o install.bat https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.bat && install.bat
+```
+
+### Linux / macOS (One-Line Install)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.sh | bash
 ```
 
-### Via npm
+### Via npm (Any Platform)
 
 ```bash
 npm install -g opendesktop-ai

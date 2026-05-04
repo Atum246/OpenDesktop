@@ -942,23 +942,47 @@
     <div class="install-grid reveal">
       <div class="install-card">
         <div class="install-card-header">
-          <span class="label">Quick Install</span>
+          <span class="label">Windows (PowerShell)</span>
           <span class="tag">RECOMMENDED</span>
         </div>
         <div class="install-code">
-          <span class="comment"># Install via curl</span><br>
-          <span class="cmd">curl</span> <span class="flag">-fsSL</span> \<br>
-          &nbsp;&nbsp;https://raw.githubusercontent.com/<br>
-          &nbsp;&nbsp;Atum246/OpenDesktop/main/install.sh | <span class="cmd">bash</span><br>
-          <br>
-          <span class="comment"># Start the agent</span><br>
-          <span class="cmd">opendesktop</span>
+          <span class="comment"># One-line install (handles Node.js too)</span><br>
+          <span class="cmd">powershell</span> <span class="flag">-ExecutionPolicy Bypass</span> \<br>
+          &nbsp;&nbsp;<span class="flag">-c</span> <span class="string">"irm https://raw.githubusercontent.com/<br>
+          &nbsp;&nbsp;Atum246/OpenDesktop/main/install.ps1 | iex"</span>
         </div>
       </div>
 
       <div class="install-card">
         <div class="install-card-header">
-          <span class="label">npm</span>
+          <span class="label">Windows (cmd)</span>
+          <span class="tag">CMD</span>
+        </div>
+        <div class="install-code">
+          <span class="comment"># Download and run installer</span><br>
+          <span class="cmd">curl</span> <span class="flag">-o</span> install.bat \<br>
+          &nbsp;&nbsp;https://raw.githubusercontent.com/<br>
+          &nbsp;&nbsp;Atum246/OpenDesktop/main/install.bat<br>
+          <span class="cmd">install.bat</span>
+        </div>
+      </div>
+
+      <div class="install-card">
+        <div class="install-card-header">
+          <span class="label">Linux / macOS</span>
+          <span class="tag">UNIX</span>
+        </div>
+        <div class="install-code">
+          <span class="comment"># Install via curl</span><br>
+          <span class="cmd">curl</span> <span class="flag">-fsSL</span> \<br>
+          &nbsp;&nbsp;https://raw.githubusercontent.com/<br>
+          &nbsp;&nbsp;Atum246/OpenDesktop/main/install.sh | <span class="cmd">bash</span>
+        </div>
+      </div>
+
+      <div class="install-card">
+        <div class="install-card-header">
+          <span class="label">npm (Any OS)</span>
           <span class="tag">NPM</span>
         </div>
         <div class="install-code">
