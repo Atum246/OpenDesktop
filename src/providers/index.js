@@ -103,6 +103,217 @@ const PROVIDERS = {
     name: 'Text Generation WebUI', baseUrl: 'http://localhost:5000/v1',
     models: ['local-model'],
     headers: () => ({})
+  },
+
+  // ═══ ADDITIONAL PROVIDERS ═══
+
+  replicate: {
+    name: 'Replicate', baseUrl: 'https://api.replicate.com/v1',
+    models: ['meta/llama-3.1-405b-instruct', 'mistralai/mixtral-8x22b-instruct', 'meta/llama-3.1-70b-instruct'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}`, 'Content-Type': 'application/json' }),
+    isReplicate: true
+  },
+  anyscale: {
+    name: 'Anyscale', baseUrl: 'https://api.endpoints.anyscale.com/v1',
+    models: ['meta-llama/Meta-Llama-3.1-405B-Instruct', 'meta-llama/Meta-Llama-3.1-70B-Instruct', 'mistralai/Mixtral-8x22B-Instruct-v0.1'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  lepton: {
+    name: 'Lepton AI', baseUrl: 'https://api.lepton.ai/api/v1',
+    models: ['llama3.1-405b', 'llama3.1-70b', 'mixtral-8x22b'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  writer: {
+    name: 'Writer', baseUrl: 'https://api.writer.com/v1',
+    models: ['palmyra-x-004', 'palmyra-x-003', 'palmyra-large'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  ai21: {
+    name: 'AI21 Labs', baseUrl: 'https://api.ai21.com/studio/v1',
+    models: ['jamba-1.5-large', 'jamba-1.5-mini', 'jamba-instruct'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  huggingface: {
+    name: 'HuggingFace Inference', baseUrl: 'https://api-inference.huggingface.co/models',
+    models: ['meta-llama/Meta-Llama-3.1-405B-Instruct', 'mistralai/Mixtral-8x22B-Instruct-v0.1', 'google/gemma-2-27b-it'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` }),
+    isHuggingFace: true
+  },
+  deepinfra: {
+    name: 'DeepInfra', baseUrl: 'https://api.deepinfra.com/v1/openai',
+    models: ['meta-llama/Meta-Llama-3.1-405B-Instruct', 'mistralai/Mixtral-8x22B-Instruct', 'Qwen/Qwen2-72B-Instruct', 'google/gemma-2-27b-it'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  novita: {
+    name: 'Novita AI', baseUrl: 'https://api.novita.ai/v3/openai',
+    models: ['meta-llama/llama-3.1-405b-instruct', 'mistralai/mixtral-8x22b-instruct', 'deepseek/deepseek-chat'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  featherless: {
+    name: 'Featherless AI', baseUrl: 'https://api.featherless.ai/v1',
+    models: ['meta-llama/Meta-Llama-3.1-405B-Instruct', 'mistralai/Mixtral-8x22B-Instruct-v0.1'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  chutes: {
+    name: 'Chutes AI', baseUrl: 'https://api.chutes.ai/v1',
+    models: ['meta-llama/llama-3.1-405b-instruct', 'mistralai/mixtral-8x22b-instruct'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  centml: {
+    name: 'CentML', baseUrl: 'https://api.centml.com/v1',
+    models: ['meta-llama/llama-3.1-405b-instruct', 'mistralai/mixtral-8x22b-instruct'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  openpipe: {
+    name: 'OpenPipe', baseUrl: 'https://api.openpipe.ai/v1',
+    models: ['openpipe/mistral-7b', 'openpipe/llama-3.1-8b'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  infermatic: {
+    name: 'Infermatic', baseUrl: 'https://api.infermatic.ai/v1',
+    models: ['llama-3.1-405b', 'mixtral-8x22b', 'qwen2-72b'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+
+  // ═══ CHINESE PROVIDERS ═══
+  yi: {
+    name: '01.AI (Yi)', baseUrl: 'https://api.01.ai/v1',
+    models: ['yi-large', 'yi-medium', 'yi-spark', 'yi-large-turbo'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  moonshot: {
+    name: 'Moonshot AI', baseUrl: 'https://api.moonshot.cn/v1',
+    models: ['moonshot-v1-128k', 'moonshot-v1-32k', 'moonshot-v1-8k'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  zhipu: {
+    name: 'Zhipu AI (GLM)', baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    models: ['glm-4-plus', 'glm-4', 'glm-4-flash', 'glm-4v'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  baidu: {
+    name: 'Baidu (ERNIE)', baseUrl: 'https://aip.baidubce.com',
+    models: ['ernie-4.0-8k', 'ernie-3.5-8k', 'ernie-speed-128k'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` }),
+    isBaidu: true
+  },
+  alibaba: {
+    name: 'Alibaba (Qwen)', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    models: ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen-vl-max', 'qwen-long'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  minimax: {
+    name: 'MiniMax', baseUrl: 'https://api.minimax.chat/v1',
+    models: ['abab6.5s-chat', 'abab6.5-chat', 'abab5.5-chat'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  baichuan: {
+    name: 'Baichuan', baseUrl: 'https://api.baichuan-ai.com/v1',
+    models: ['Baichuan4', 'Baichuan3-Turbo', 'Baichuan2-Turbo'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  siliconflow: {
+    name: 'SiliconFlow', baseUrl: 'https://api.siliconflow.cn/v1',
+    models: ['Qwen/Qwen2-72B-Instruct', 'meta-llama/Meta-Llama-3.1-405B-Instruct', 'deepseek-ai/deepseek-v2-chat'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  volcengine: {
+    name: 'VolcEngine (Doubao)', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    models: ['doubao-pro-128k', 'doubao-lite-128k', 'doubao-pro-32k'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+
+  // ═══ SPECIALIZED PROVIDERS ═══
+  voyage: {
+    name: 'Voyage AI (Embeddings)', baseUrl: 'https://api.voyageai.com/v1',
+    models: ['voyage-large-2', 'voyage-code-2', 'voyage-2'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  modal: {
+    name: 'Modal', baseUrl: 'https://modal.com/api/v1',
+    models: ['custom-endpoint'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  runpod: {
+    name: 'RunPod', baseUrl: 'https://api.runpod.ai/v2',
+    models: ['custom-endpoint'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  lambda: {
+    name: 'Lambda Labs', baseUrl: 'https://api.lambdalabs.com/v1',
+    models: ['llama-3.1-405b-instruct', 'llama-3.1-70b-instruct'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  banana: {
+    name: 'Banana', baseUrl: 'https://api.banana.dev/v1',
+    models: ['custom-model'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  mystic: {
+    name: 'Mystic', baseUrl: 'https://api.mystic.ai/v1',
+    models: ['custom-model'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  baseten: {
+    name: 'Baseten', baseUrl: 'https://app.baseten.co/api/v1',
+    models: ['custom-model'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  fireworks_deepseek: {
+    name: 'Fireworks DeepSeek', baseUrl: 'https://api.fireworks.ai/inference/v1',
+    models: ['accounts/fireworks/models/deepseek-coder-v2-instruct', 'accounts/fireworks/models/deepseek-v3'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  nebius: {
+    name: 'Nebius AI', baseUrl: 'https://api.studio.nebius.ai/v1',
+    models: ['meta/Meta-Llama-3.1-405B-Instruct', 'mistralai/Mixtral-8x22B-Instruct'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  upstage: {
+    name: 'Upstage', baseUrl: 'https://api.upstage.ai/v1/solar',
+    models: ['solar-1-mini-chat', 'solar-1-mini-128k'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  cohere_embeddings: {
+    name: 'Cohere Embeddings', baseUrl: 'https://api.cohere.ai/v1',
+    models: ['embed-english-v3.0', 'embed-multilingual-v3.0'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  jina: {
+    name: 'Jina AI', baseUrl: 'https://api.jina.ai/v1',
+    models: ['jina-embeddings-v2-base-en', 'jina-reranker-v2-base-multilingual'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  elevenlabs: {
+    name: 'ElevenLabs (TTS)', baseUrl: 'https://api.elevenlabs.io/v1',
+    models: ['eleven_multilingual_v2', 'eleven_turbo_v2', 'eleven_monolingual_v1'],
+    headers: (k) => ({ 'xi-api-key': k }),
+    isElevenLabs: true
+  },
+  openai_tts: {
+    name: 'OpenAI TTS', baseUrl: 'https://api.openai.com/v1',
+    models: ['tts-1', 'tts-1-hd', 'tts-1-1106'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  openai_whisper: {
+    name: 'OpenAI Whisper (STT)', baseUrl: 'https://api.openai.com/v1',
+    models: ['whisper-1'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  openai_dalle: {
+    name: 'OpenAI DALL-E (Images)', baseUrl: 'https://api.openai.com/v1',
+    models: ['dall-e-3', 'dall-e-2'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  stability: {
+    name: 'Stability AI (Images)', baseUrl: 'https://api.stability.ai/v2beta',
+    models: ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v1-6'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
+  },
+  replicate_images: {
+    name: 'Replicate (Images)', baseUrl: 'https://api.replicate.com/v1',
+    models: ['stability-ai/sdxl', 'black-forest-labs/flux-schnell'],
+    headers: (k) => ({ 'Authorization': `Bearer ${k}` })
   }
 };
 

@@ -41,6 +41,7 @@ const EvolutionEngine = require('../evolution/index.js');
 const APIGateway = require('../api-gateway/index.js');
 const CodeIntelligence = require('../code-intelligence/index.js');
 const TrustSafety = require('../trust-safety/index.js');
+const UniversalToolkit = require('../universal-toolkit/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -82,6 +83,7 @@ class OpenDesktopEngine {
     this.apiGateway = new APIGateway(this.config, this);
     this.codeIntel = new CodeIntelligence(this.config, this.provider, this.memory);
     this.trustSafety = new TrustSafety(this.config, this.security);
+    this.toolkit = new UniversalToolkit(this.config, this.provider);
 
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
@@ -374,7 +376,25 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
           chalk.hex('#00FFFF')('/rollbacks') + chalk.hex('#888888')('          — List rollbacks'),
           chalk.hex('#00FFFF')('/rollback <id>') + chalk.hex('#888888')('      — Undo action'),
           chalk.hex('#00FFFF')('/approvals') + chalk.hex('#888888')('          — Pending approvals'),
-          chalk.hex('#00FFFF')('/trust-log') + chalk.hex('#888888')('          — Audit trail')
+          chalk.hex('#00FFFF')('/trust-log') + chalk.hex('#888888')('          — Audit trail'),
+          '',
+          chalk.hex('#FF0000')('═══ 🔧 UNIVERSAL TOOLKIT ═══'),
+          chalk.hex('#00FFFF')('/toolkit') + chalk.hex('#888888')('             — All toolkit commands'),
+          chalk.hex('#00FFFF')('/imagine <prompt>') + chalk.hex('#888888')('      — Generate image'),
+          chalk.hex('#00FFFF')('/tts <text>') + chalk.hex('#888888')('          — Text to speech'),
+          chalk.hex('#00FFFF')('/stt <audio>') + chalk.hex('#888888')('         — Speech to text'),
+          chalk.hex('#00FFFF')('/pdf <content>') + chalk.hex('#888888')('       — Generate PDF'),
+          chalk.hex('#00FFFF')('/convert <f> <fmt>') + chalk.hex('#888888')('   — Convert file'),
+          chalk.hex('#00FFFF')('/chart <type> <data>') + chalk.hex('#888888')(' — Generate chart'),
+          chalk.hex('#00FFFF')('/git <cmd>') + chalk.hex('#888888')('           — Git operations'),
+          chalk.hex('#00FFFF')('/docker <cmd>') + chalk.hex('#888888')('        — Docker operations'),
+          chalk.hex('#00FFFF')('/ssh <host> <cmd>') + chalk.hex('#888888')('    — SSH command'),
+          chalk.hex('#00FFFF')('/http <url>') + chalk.hex('#888888')('          — HTTP request'),
+          chalk.hex('#00FFFF')('/encode/decode <text>') + chalk.hex('#888888')(' — Encode/decode'),
+          chalk.hex('#00FFFF')('/hash <text>') + chalk.hex('#888888')('         — Hash data'),
+          chalk.hex('#00FFFF')('/weather <city>') + chalk.hex('#888888')('      — Get weather'),
+          chalk.hex('#00FFFF')('/crypto') + chalk.hex('#888888')('              — Crypto prices'),
+          chalk.hex('#00FFFF')('/messaging') + chalk.hex('#888888')('           — Messaging hub')
         ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red', title: `⚡ ${this.aiName} Help`, titleAlignment: 'center' }));
         break;
 
@@ -1201,6 +1221,239 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       case '/trust-log': {
         const log = this.trustSafety.getAuditTrail({ limit: 15 });
         log.forEach(l => console.log(chalk.hex('#888888')(`  [${new Date(l.timestamp).toLocaleTimeString()}]`) + ` ${l.action}`));
+        break;
+      }
+
+      // ═══ UNIVERSAL TOOLKIT ═══
+      case '/toolkit': {
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔧 Universal Toolkit — Does EVERYTHING'),
+          '',
+          chalk.hex('#FF0000')('═══ IMAGE GENERATION ═══'),
+          chalk.hex('#00FFFF')('/imagine <prompt>') + chalk.hex('#888888')('      — Generate image (DALL-E 3)'),
+          chalk.hex('#00FFFF')('/imagine-sd <prompt>') + chalk.hex('#888888')('   — Generate image (Stability AI)'),
+          '',
+          chalk.hex('#FF0000')('═══ VOICE & AUDIO ═══'),
+          chalk.hex('#00FFFF')('/tts <text>') + chalk.hex('#888888')('           — Text to speech (OpenAI)'),
+          chalk.hex('#00FFFF')('/tts-11 <text>') + chalk.hex('#888888')('        — Text to speech (ElevenLabs)'),
+          chalk.hex('#00FFFF')('/stt <audio-file>') + chalk.hex('#888888')('      — Speech to text (Whisper)'),
+          '',
+          chalk.hex('#FF0000')('═══ DOCUMENTS ═══'),
+          chalk.hex('#00FFFF')('/pdf <content>') + chalk.hex('#888888')('         — Generate PDF'),
+          chalk.hex('#00FFFF')('/convert <file> <fmt>') + chalk.hex('#888888')('   — Convert file format'),
+          chalk.hex('#00FFFF')('/csv2json <file>') + chalk.hex('#888888')('      — CSV to JSON'),
+          chalk.hex('#00FFFF')('/json2csv <file>') + chalk.hex('#888888')('      — JSON to CSV'),
+          chalk.hex('#00FFFF')('/spreadsheet <data>') + chalk.hex('#888888')('   — Create spreadsheet'),
+          '',
+          chalk.hex('#FF0000')('═══ CHARTS ═══'),
+          chalk.hex('#00FFFF')('/chart <type> <data>') + chalk.hex('#888888')('    — Generate chart (bar/line/pie)'),
+          '',
+          chalk.hex('#FF0000')('═══ GIT ═══'),
+          chalk.hex('#00FFFF')('/git <command>') + chalk.hex('#888888')('        — Git operations'),
+          chalk.hex('#00FFFF')('/git-log') + chalk.hex('#888888')('             — Git log'),
+          chalk.hex('#00FFFF')('/git-diff') + chalk.hex('#888888')('            — Git diff'),
+          '',
+          chalk.hex('#FF0000')('═══ DOCKER ═══'),
+          chalk.hex('#00FFFF')('/docker <command>') + chalk.hex('#888888')('     — Docker operations'),
+          chalk.hex('#00FFFF')('/docker-ps') + chalk.hex('#888888')('           — List containers'),
+          '',
+          chalk.hex('#FF0000')('═══ SSH ═══'),
+          chalk.hex('#00FFFF')('/ssh <host> <cmd>') + chalk.hex('#888888')('     — Run SSH command'),
+          '',
+          chalk.hex('#FF0000')('═══ HTTP/API ═══'),
+          chalk.hex('#00FFFF')('/http <url>') + chalk.hex('#888888')('          — HTTP request'),
+          chalk.hex('#00FFFF')('/api-test <url>') + chalk.hex('#888888')('      — Test API endpoint'),
+          '',
+          chalk.hex('#FF0000')('═══ ENCODING ═══'),
+          chalk.hex('#00FFFF')('/encode <text>') + chalk.hex('#888888')('        — Encode base64/hex/url'),
+          chalk.hex('#00FFFF')('/decode <text>') + chalk.hex('#888888')('        — Decode base64/hex/url'),
+          chalk.hex('#00FFFF')('/hash <text>') + chalk.hex('#888888')('          — Hash (sha256/md5)'),
+          chalk.hex('#00FFFF')('/uuid') + chalk.hex('#888888')('                — Generate UUID'),
+          '',
+          chalk.hex('#FF0000')('═══ DATA ═══'),
+          chalk.hex('#00FFFF')('/json <operation> <data>') + chalk.hex('#888888')(' — JSON operations'),
+          chalk.hex('#00FFFF')('/db <type> <query>') + chalk.hex('#888888')('     — Query database'),
+          '',
+          chalk.hex('#FF0000')('═══ INFO ═══'),
+          chalk.hex('#00FFFF')('/weather <city>') + chalk.hex('#888888')('       — Get weather'),
+          chalk.hex('#00FFFF')('/crypto') + chalk.hex('#888888')('              — Crypto prices'),
+          chalk.hex('#00FFFF')('/email <to> <subj>') + chalk.hex('#888888')('   — Send email')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/imagine': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /imagine <prompt>')); break; }
+        const spin = ora('🎨 Generating image...').start();
+        const imgResult = await this.toolkit.generateImage(args);
+        spin.stop();
+        console.log(imgResult.success ? chalk.hex('#00FF40')(`✅ Image saved: ${imgResult.path}`) : chalk.hex('#FF0000')(`❌ ${imgResult.error}`));
+        if (imgResult.revisedPrompt) console.log(chalk.hex('#888888')(`  Revised: ${imgResult.revisedPrompt.slice(0, 100)}`));
+        break;
+      }
+
+      case '/tts': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /tts <text>')); break; }
+        const spin = ora('🔊 Generating speech...').start();
+        const ttsResult = await this.toolkit.textToSpeech(args);
+        spin.stop();
+        console.log(ttsResult.success ? chalk.hex('#00FF40')(`✅ Audio saved: ${ttsResult.path}`) : chalk.hex('#FF0000')(`❌ ${ttsResult.error}`));
+        break;
+      }
+
+      case '/stt': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /stt <audio-file>')); break; }
+        const spin = ora('🎤 Transcribing...').start();
+        const sttResult = await this.toolkit.speechToText(args);
+        spin.stop();
+        console.log(sttResult.success ? chalk.hex('#00FF40')(`✅ Transcription: ${sttResult.text}`) : chalk.hex('#FF0000')(`❌ ${sttResult.error}`));
+        break;
+      }
+
+      case '/pdf': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /pdf <content or file>')); break; }
+        let content = args;
+        if (fs.existsSync(args)) content = fs.readFileSync(args, 'utf8');
+        const pdfResult = await this.toolkit.generatePDF(content, { title: 'OpenDesktop Document' });
+        console.log(pdfResult.success ? chalk.hex('#00FF40')(`✅ PDF saved: ${pdfResult.path}`) : chalk.hex('#FF0000')(`❌ ${pdfResult.error}`));
+        break;
+      }
+
+      case '/convert': {
+        const [convertFile, convertFmt] = args.split(' ');
+        if (!convertFile || !convertFmt) { console.log(chalk.hex('#FF0000')('Usage: /convert <file> <format>')); break; }
+        const convertResult = await this.toolkit.convertFile(convertFile, convertFmt);
+        console.log(convertResult.success ? chalk.hex('#00FF40')(`✅ Converted: ${convertResult.output}`) : chalk.hex('#FF0000')(`❌ ${convertResult.error}`));
+        break;
+      }
+
+      case '/chart': {
+        const [chartType, ...chartDataParts] = args.split(' ');
+        if (!chartType) { console.log(chalk.hex('#FF0000')('Usage: /chart <bar|line|pie> <label:value,...>')); break; }
+        try {
+          const chartData = chartDataParts.join(' ').split(',').map(item => {
+            const [label, value] = item.split(':');
+            return { label: label?.trim(), value: parseFloat(value) || 0 };
+          });
+          const chartResult = await this.toolkit.generateChart(chartData, { type: chartType, title: 'Chart' });
+          console.log(chartResult.success ? chalk.hex('#00FF40')(`✅ Chart saved: ${chartResult.svg}`) : chalk.hex('#FF0000')(`❌ ${chartResult.error}`));
+        } catch (e) { console.log(chalk.hex('#FF0000')(`❌ ${e.message}`)); }
+        break;
+      }
+
+      case '/git': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /git <status|log|diff|branch|stash|remote|tags|contributors>')); break; }
+        const gitResult = await this.toolkit.gitOperation(args);
+        console.log(gitResult.success ? gitResult.output : chalk.hex('#FF0000')(`❌ ${gitResult.error}`));
+        break;
+      }
+
+      case '/git-log': {
+        const gitLogResult = await this.toolkit.gitOperation('log');
+        console.log(gitLogResult.success ? gitLogResult.output : chalk.hex('#FF0000')(`❌ ${gitLogResult.error}`));
+        break;
+      }
+
+      case '/git-diff': {
+        const gitDiffResult = await this.toolkit.gitOperation('diff');
+        console.log(gitDiffResult.success ? gitDiffResult.output : chalk.hex('#FF0000')(`❌ ${gitDiffResult.error}`));
+        break;
+      }
+
+      case '/docker': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /docker <ps|images|volumes|networks|stats|logs|pull|stop|start|prune>')); break; }
+        const dockerResult = await this.toolkit.dockerOperation(args);
+        console.log(dockerResult.success ? dockerResult.output : chalk.hex('#FF0000')(`❌ ${dockerResult.error}`));
+        break;
+      }
+
+      case '/docker-ps': {
+        const dpsResult = await this.toolkit.dockerOperation('ps');
+        console.log(dpsResult.success ? dpsResult.output : chalk.hex('#FF0000')(`❌ ${dpsResult.error}`));
+        break;
+      }
+
+      case '/ssh': {
+        const [sshHost, ...sshCmdParts] = args.split(' ');
+        if (!sshHost || !sshCmdParts.length) { console.log(chalk.hex('#FF0000')('Usage: /ssh <host> <command>')); break; }
+        const sshResult = await this.toolkit.sshCommand(sshHost, sshCmdParts.join(' '));
+        console.log(sshResult.success ? sshResult.output : chalk.hex('#FF0000')(`❌ ${sshResult.error}`));
+        break;
+      }
+
+      case '/http': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /http <url>')); break; }
+        const httpResult = await this.toolkit.httpRequest(args);
+        console.log(chalk.hex('#00FFFF')(`Status: ${httpResult.status}`));
+        console.log(typeof httpResult.data === 'object' ? JSON.stringify(httpResult.data, null, 2).slice(0, 500) : String(httpResult.data).slice(0, 500));
+        break;
+      }
+
+      case '/encode': {
+        const [encFmt, ...encParts] = args.split(' ');
+        const encResult = this.toolkit.encode(encParts.join(' '), encFmt);
+        console.log(chalk.hex('#00FF40')(`✅ ${encResult.encoded}`));
+        break;
+      }
+
+      case '/decode': {
+        const [decFmt, ...decParts] = args.split(' ');
+        const decResult = this.toolkit.decode(decParts.join(' '), decFmt);
+        console.log(chalk.hex('#00FF40')(`✅ ${decResult.decoded}`));
+        break;
+      }
+
+      case '/hash': {
+        const [hashAlg, ...hashParts] = args.split(' ');
+        const hashResult = this.toolkit.hash(hashParts.join(' ') || args, hashAlg || 'sha256');
+        console.log(chalk.hex('#00FF40')(`${hashResult.algorithm}: ${hashResult.hash}`));
+        break;
+      }
+
+      case '/uuid': {
+        const count = parseInt(args) || 1;
+        const uuid = this.toolkit.generateUUID(count);
+        if (Array.isArray(uuid)) uuid.forEach(u => console.log(chalk.hex('#00FF40')(u)));
+        else console.log(chalk.hex('#00FF40')(uuid));
+        break;
+      }
+
+      case '/weather': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /weather <city>')); break; }
+        const weather = await this.toolkit.getWeather(args);
+        if (weather.success) {
+          console.log(chalk.hex('#00FFFF')(`🌡️ ${weather.city}: ${weather.temp} (feels ${weather.feelsLike})`));
+          console.log(chalk.hex('#888888')(`   ${weather.description} | Humidity: ${weather.humidity} | Wind: ${weather.wind}`));
+        } else console.log(chalk.hex('#FF0000')(`❌ ${weather.error}`));
+        break;
+      }
+
+      case '/crypto': {
+        const cryptoResult = await this.toolkit.cryptoPrice();
+        if (cryptoResult.success) {
+          for (const [coin, data] of Object.entries(cryptoResult.data)) {
+            console.log(chalk.hex('#00FFFF')(`  ${coin}: $${data.usd}`) + chalk.hex(data.usd_24h_change > 0 ? '#00FF40' : '#FF0000')(` (${data.usd_24h_change?.toFixed(2)}%)`));
+          }
+        } else console.log(chalk.hex('#FF0000')(`❌ ${cryptoResult.error}`));
+        break;
+      }
+
+      // ═══ MESSAGING ═══
+      case '/messaging': {
+        const msgStatus = this.messaging.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('💬 Messaging Hub — 20 Platforms'),
+          '',
+          chalk.hex('#00FFFF')('Active: ') + (msgStatus.active ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('Platforms: ') + msgStatus.platforms.length,
+          chalk.hex('#00FFFF')('Messages: ') + msgStatus.totalMessages,
+          chalk.hex('#00FFFF')('Supported: ') + msgStatus.supportedPlatforms + ' platforms',
+          '',
+          chalk.hex('#FF0000')('═══ PLATFORMS ═══'),
+          ...this.messaging.getSupportedPlatforms().map(p =>
+            chalk.hex('#00FFFF')(`  ${p.icon} ${p.name.padEnd(15)}`) + chalk.hex('#888888')(` ${p.requires}`)
+          )
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
         break;
       }
 

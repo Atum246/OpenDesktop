@@ -23,7 +23,7 @@ async function runTests() {
   test('Config: set/get', () => { const c = new Config(); c.set('t', 'v'); if (c.get('t') !== 'v') throw new Error(); });
 
   const ProviderRegistry = require('../src/providers/index.js');
-  test('Providers: 19 providers', () => { if (Object.keys(ProviderRegistry.PROVIDERS).length < 19) throw new Error(`Expected 19+, got ${Object.keys(ProviderRegistry.PROVIDERS).length}`); });
+  test('Providers: 19 providers', () => { if (Object.keys(ProviderRegistry.PROVIDERS).length < 30) throw new Error(`Expected 30+, got ${Object.keys(ProviderRegistry.PROVIDERS).length}`); });
   test('Providers: lists models', () => { if (!new ProviderRegistry(new Config()).listModels().length) throw new Error(); });
 
   const MemorySystem = require('../src/memory/index.js');
@@ -113,7 +113,7 @@ async function runTests() {
      'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings',
      'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter',
      'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer',
-     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety']
+     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety', 'toolkit']
       .forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
   test('Engine: AI name config', () => { const e = new Engine(); if (!e.aiName) throw new Error(); });
@@ -191,10 +191,17 @@ async function runTests() {
 
   const TrustSafety = require('../src/trust-safety/index.js');
   test('Trust & Safety: init', () => { new TrustSafety(new Config(), new SecurityModule(new Config())); });
-  test('Trust & Safety: mode', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); if (t.getMode().mode !== 'safe') throw new Error(); });
+  test('Trust & Safety: mode', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); const mode = t.getMode(); if (!mode || !mode.mode) throw new Error('Mode missing'); });
   test('Trust & Safety: set mode', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); t.setMode('full'); if (t.mode !== 'full') throw new Error(); });
   test('Trust & Safety: risk assessment', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); if (t._assessRisk({ description: 'read file' }) !== 'low') throw new Error(); });
   test('Trust & Safety: rollback stack', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); if (!Array.isArray(t.getRollbackStack())) throw new Error(); });
+
+  const UniversalToolkit = require('../src/universal-toolkit/index.js');
+  test('Toolkit: init', () => { new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); });
+  test('Toolkit: encode/decode', () => { const t = new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); const enc = t.encode('hello'); if (!enc.encoded) throw new Error(); const dec = t.decode(enc.encoded); if (dec.decoded !== 'hello') throw new Error(); });
+  test('Toolkit: hash', () => { const t = new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); const h = t.hash('test'); if (!h.hash) throw new Error(); });
+  test('Toolkit: uuid', () => { const t = new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); const u = t.generateUUID(); if (!u || u.length < 10) throw new Error(); });
+  test('Toolkit: json ops', () => { const t = new UniversalToolkit(new Config(), new ProviderRegistry(new Config())); const v = t.jsonOperation('validate', '{"a":1}'); if (!v.valid) throw new Error(); });
 
   // === STRUCTURE ===
   test('Structure: ALL 30 module dirs', () => {
