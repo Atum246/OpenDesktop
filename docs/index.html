@@ -3,822 +3,1248 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenDesktop — The AI Intelligence Agent</title>
-  <meta name="description" content="Not a chatbot. A self-improving AI desktop agent that controls your computer, researches the web, spawns AI armies, and gets smarter every interaction.">
-  <meta property="og:title" content="OpenDesktop — The AI Intelligence Agent">
-  <meta property="og:description" content="Self-improving AI desktop agent. 50+ providers. 37 languages. 20 messaging platforms. Open source.">
-  <meta property="og:type" content="website">
+  <title>OpenDesktop -- AI-Powered Desktop Agent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --green: #00ff41;
-      --red: #ff003c;
-      --cyan: #00ffff;
-      --yellow: #ffd700;
-      --purple: #b967ff;
-      --bg: #0a0a0a;
-      --bg-panel: rgba(10, 10, 10, 0.85);
-      --border: rgba(0, 255, 65, 0.15);
-      --text: #c0c0c0;
-      --text-bright: #ffffff;
-      --font-mono: 'Fira Code', 'Courier New', monospace;
-      --font-sans: 'Space Grotesk', system-ui, sans-serif;
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    html { scroll-behavior: smooth; }
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-tertiary: #1a1a1a;
+      --bg-card: #141414;
+      --border: #222222;
+      --border-hover: #333333;
+      --text-primary: #e8e8e8;
+      --text-secondary: #888888;
+      --text-muted: #555555;
+      --accent: #00ff88;
+      --accent-dim: #00cc6a;
+      --accent-glow: rgba(0, 255, 136, 0.15);
+      --accent-glow-strong: rgba(0, 255, 136, 0.3);
+      --white: #ffffff;
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
       font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text);
       overflow-x: hidden;
       line-height: 1.6;
     }
 
-    /* ── Matrix Canvas ─── */
+    /* ==================== MATRIX RAIN ==================== */
     #matrix-canvas {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: 0;
-      opacity: 0.12;
-    }
-
-    /* ── Scanline ─── */
-    .scanline {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 255, 65, 0.015) 2px,
-        rgba(0, 255, 65, 0.015) 4px
-      );
       pointer-events: none;
-      z-index: 1;
+      opacity: 0.07;
     }
 
-    /* ── Container ─── */
-    .container {
-      position: relative;
-      z-index: 2;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
-
-    /* ── Nav ─── */
+    /* ==================== NAV ==================== */
     nav {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 0;
+      left: 0;
+      right: 0;
       z-index: 100;
-      background: rgba(10, 10, 10, 0.95);
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(20px);
-    }
-    nav .container {
+      padding: 0 48px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 64px;
+      background: rgba(10, 10, 10, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
     }
+
     .nav-logo {
       font-family: var(--font-mono);
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      color: var(--green);
+      color: var(--accent);
+      letter-spacing: -0.5px;
       text-decoration: none;
-      letter-spacing: 2px;
     }
-    .nav-logo span { color: var(--red); }
-    .nav-links { display: flex; gap: 32px; align-items: center; }
+
+    .nav-logo span {
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
     .nav-links a {
-      color: var(--text);
+      color: var(--text-secondary);
       text-decoration: none;
       font-size: 14px;
       font-weight: 500;
       transition: color 0.2s;
-      letter-spacing: 0.5px;
-    }
-    .nav-links a:hover { color: var(--green); }
-    .nav-cta {
-      background: var(--green) !important;
-      color: var(--bg) !important;
-      padding: 8px 20px;
-      border-radius: 4px;
-      font-weight: 700 !important;
-      font-family: var(--font-mono) !important;
-      font-size: 13px !important;
-      transition: box-shadow 0.2s !important;
-    }
-    .nav-cta:hover {
-      box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+      font-family: var(--font-mono);
     }
 
-    /* ── Hero ─── */
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn-ghost {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+
+    .btn-primary {
+      padding: 8px 20px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-glow-strong);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    /* ==================== HERO ==================== */
     .hero {
+      position: relative;
+      z-index: 1;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding-top: 64px;
+      padding: 120px 48px 80px;
     }
+
+    .hero-content {
+      max-width: 900px;
+    }
+
     .hero-badge {
-      display: inline-block;
-      padding: 6px 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
       border: 1px solid var(--border);
       border-radius: 100px;
       font-family: var(--font-mono);
       font-size: 12px;
-      color: var(--green);
+      color: var(--text-secondary);
       margin-bottom: 32px;
-      letter-spacing: 1px;
+      background: var(--bg-secondary);
     }
+
     .hero-badge .dot {
-      display: inline-block;
-      width: 6px; height: 6px;
-      background: var(--green);
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
-      margin-right: 8px;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-    .hero-ascii {
-      font-family: var(--font-mono);
-      font-size: clamp(10px, 1.8vw, 18px);
-      color: var(--green);
-      white-space: pre;
-      line-height: 1.1;
-      margin-bottom: 32px;
-      text-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
-      animation: flicker 4s infinite;
-    }
-    @keyframes flicker {
-      0%, 100% { opacity: 1; }
-      92% { opacity: 1; }
-      93% { opacity: 0.8; }
-      94% { opacity: 1; }
-      96% { opacity: 0.9; }
-      97% { opacity: 1; }
-    }
-    .hero h1 {
-      font-family: var(--font-sans);
-      font-size: clamp(32px, 5vw, 64px);
-      font-weight: 700;
-      color: var(--text-bright);
-      margin-bottom: 24px;
-      line-height: 1.1;
-    }
-    .hero h1 .highlight { color: var(--green); }
-    .hero p {
-      font-size: clamp(16px, 2vw, 20px);
-      color: var(--text);
-      max-width: 640px;
-      margin-bottom: 40px;
-    }
-    .hero-buttons {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: 6px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s;
-      cursor: pointer;
-      border: none;
-    }
-    .btn-primary {
-      background: var(--green);
-      color: var(--bg);
-    }
-    .btn-primary:hover {
-      box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
-      transform: translateY(-2px);
-    }
-    .btn-secondary {
-      background: transparent;
-      color: var(--green);
-      border: 1px solid var(--green);
-    }
-    .btn-secondary:hover {
-      background: rgba(0, 255, 65, 0.1);
-      transform: translateY(-2px);
-    }
-    .hero-install {
-      margin-top: 40px;
-      font-family: var(--font-mono);
-      font-size: 14px;
-      color: var(--text);
-      background: rgba(0, 255, 65, 0.05);
-      border: 1px solid var(--border);
-      padding: 16px 24px;
-      border-radius: 8px;
-      display: inline-block;
-    }
-    .hero-install code {
-      color: var(--green);
-      user-select: all;
+      background: var(--accent);
+      animation: pulse-dot 2s infinite;
     }
 
-    /* ── Stats ─── */
-    .stats {
-      padding: 80px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--accent); }
+      50% { opacity: 0.5; box-shadow: 0 0 8px var(--accent); }
     }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 32px;
-      text-align: center;
-    }
-    .stat-number {
+
+    .hero-logo-text {
       font-family: var(--font-mono);
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: clamp(48px, 8vw, 96px);
       font-weight: 700;
-      color: var(--green);
       line-height: 1;
-    }
-    .stat-label {
-      font-size: 14px;
-      color: var(--text);
-      margin-top: 8px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
+      letter-spacing: -3px;
+      margin-bottom: 8px;
+      color: var(--white);
     }
 
-    /* ── Sections ─── */
-    section { padding: 100px 0; }
-    .section-label {
+    .hero-logo-text .open {
+      color: var(--text-muted);
+    }
+
+    .hero-logo-text .desktop {
+      color: var(--accent);
+      text-shadow: 0 0 40px var(--accent-glow);
+    }
+
+    .hero-subtitle {
       font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--green);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-    .section-title {
-      font-size: clamp(28px, 4vw, 48px);
-      font-weight: 700;
-      color: var(--text-bright);
-      margin-bottom: 20px;
-      line-height: 1.15;
-    }
-    .section-desc {
-      font-size: 18px;
-      color: var(--text);
-      max-width: 640px;
-      margin-bottom: 48px;
-    }
-
-    /* ── Features Grid ─── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 24px;
-    }
-    .feature-card {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 32px;
-      transition: all 0.3s;
-    }
-    .feature-card:hover {
-      border-color: var(--green);
-      box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
-      transform: translateY(-4px);
-    }
-    .feature-icon {
-      font-size: 32px;
-      margin-bottom: 16px;
-    }
-    .feature-card h3 {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-bright);
-      margin-bottom: 12px;
-    }
-    .feature-card p {
-      font-size: 14px;
-      color: var(--text);
+      font-size: clamp(14px, 2vw, 18px);
+      color: var(--text-muted);
+      margin-top: 16px;
+      margin-bottom: 40px;
+      max-width: 600px;
       line-height: 1.7;
     }
 
-    /* ── Code Block ─── */
-    .code-showcase {
-      background: var(--bg-panel);
+    .hero-subtitle .highlight {
+      color: var(--accent);
+    }
+
+    /* Terminal animation */
+    .terminal-hero {
+      margin-top: 48px;
+      max-width: 680px;
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
-      margin: 48px 0;
+      background: var(--bg-secondary);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 60px var(--accent-glow);
     }
-    .code-header {
+
+    .terminal-header {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 20px;
-      background: rgba(0, 255, 65, 0.03);
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
       border-bottom: 1px solid var(--border);
     }
-    .code-dot {
-      width: 12px; height: 12px;
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
     }
-    .code-dot.red { background: #ff5f57; }
-    .code-dot.yellow { background: #febc2e; }
-    .code-dot.green { background: #28c840; }
-    .code-title {
+
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+
+    .terminal-title {
       font-family: var(--font-mono);
       font-size: 12px;
-      color: var(--text);
-      margin-left: 12px;
+      color: var(--text-muted);
+      margin-left: 8px;
     }
-    .code-body {
+
+    .terminal-body {
       padding: 24px;
       font-family: var(--font-mono);
       font-size: 14px;
       line-height: 1.8;
-      overflow-x: auto;
+      min-height: 200px;
     }
-    .code-body .prompt { color: var(--green); }
-    .code-body .cmd { color: var(--text-bright); }
-    .code-body .comment { color: #555; }
-    .code-body .output { color: var(--cyan); }
-    .code-body .highlight { color: var(--yellow); }
 
-    /* ── Terminal Demo ─── */
-    .terminal-demo {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    .terminal-body {
-      padding: 24px;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.8;
-      min-height: 300px;
-    }
     .terminal-line {
       display: flex;
-      gap: 8px;
-      margin-bottom: 4px;
+      gap: 0;
+      opacity: 0;
+      animation: fadeInLine 0.3s forwards;
     }
-    .terminal-prompt { color: var(--green); white-space: nowrap; }
-    .terminal-input { color: var(--text-bright); }
-    .terminal-output { color: var(--text); padding-left: 20px; }
-    .terminal-cursor {
+
+    .terminal-line .prompt {
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .terminal-line .command {
+      color: var(--text-primary);
+    }
+
+    .terminal-line .output {
+      color: var(--text-secondary);
+    }
+
+    .terminal-line .success {
+      color: var(--accent);
+    }
+
+    .terminal-line .url {
+      color: #6ea8fe;
+    }
+
+    .cursor-blink {
       display: inline-block;
-      width: 8px; height: 16px;
-      background: var(--green);
+      width: 8px;
+      height: 16px;
+      background: var(--accent);
       animation: blink 1s step-end infinite;
-      vertical-align: middle;
+      vertical-align: text-bottom;
       margin-left: 2px;
     }
+
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
 
-    /* ── Providers ─── */
-    .providers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-    }
-    .provider-chip {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      color: var(--text);
-      text-align: center;
-      transition: all 0.2s;
-    }
-    .provider-chip:hover {
-      border-color: var(--green);
-      color: var(--green);
+    @keyframes fadeInLine {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Comparison Table ─── */
-    .comparison-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-    .comparison-table th, .comparison-table td {
-      padding: 14px 20px;
-      text-align: left;
+    /* ==================== STATS BAR ==================== */
+    .stats-bar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 1px;
+      background: var(--border);
+      border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
-    .comparison-table th {
+
+    .stat-item {
+      flex: 1;
+      background: var(--bg-secondary);
+      padding: 32px 48px;
+      text-align: center;
+    }
+
+    .stat-number {
       font-family: var(--font-mono);
-      color: var(--green);
-      font-size: 12px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    .comparison-table td { color: var(--text); }
-    .comparison-table tr:hover { background: rgba(0, 255, 65, 0.03); }
-    .check { color: var(--green); }
-    .cross { color: #555; }
-
-    /* ── CTA ─── */
-    .cta-section {
-      text-align: center;
-      padding: 120px 0;
-      border-top: 1px solid var(--border);
-    }
-    .cta-section h2 {
-      font-size: clamp(28px, 4vw, 48px);
+      font-size: 32px;
       font-weight: 700;
-      color: var(--text-bright);
-      margin-bottom: 20px;
-    }
-    .cta-section p {
-      font-size: 18px;
-      color: var(--text);
-      margin-bottom: 40px;
+      color: var(--accent);
+      letter-spacing: -1px;
     }
 
-    /* ── Footer ─── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 0;
-      text-align: center;
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    footer p {
+
+    /* ==================== SECTIONS ==================== */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 100px 48px;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: var(--font-sans);
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+    }
+
+    /* ==================== FEATURES GRID ==================== */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      padding: 36px;
+      transition: background 0.2s;
+    }
+
+    .feature-card:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .feature-icon {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      color: var(--accent);
+      margin-bottom: 16px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--accent-glow);
+    }
+
+    .feature-title {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ==================== INSTALL SECTION ==================== */
+    .install-section {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1000px;
+    }
+
+    .install-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg-primary);
+    }
+
+    .install-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .install-card-header .label {
       font-family: var(--font-mono);
       font-size: 13px;
-      color: #555;
-    }
-    footer a { color: var(--green); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    /* ── Responsive ─── */
-    @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .nav-links { display: none; }
-      .hero-ascii { font-size: 8px; }
-      .features-grid { grid-template-columns: 1fr; }
+      color: var(--text-secondary);
+      font-weight: 500;
     }
 
-    /* ── Glitch Effect ─── */
-    .glitch {
+    .install-card-header .tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(0,255,136,0.2);
+    }
+
+    .install-code {
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      overflow-x: auto;
+    }
+
+    .install-code .cmd {
+      color: var(--accent);
+    }
+
+    .install-code .flag {
+      color: #6ea8fe;
+    }
+
+    .install-code .string {
+      color: #ce9178;
+    }
+
+    .install-code .comment {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ==================== PROVIDERS ==================== */
+    .providers-section {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .providers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .provider-item {
+      background: var(--bg-card);
+      padding: 20px;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .provider-item:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .provider-item .provider-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .provider-item .provider-count {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* ==================== ARCHITECTURE ==================== */
+    .arch-terminal {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+      max-width: 800px;
+    }
+
+    .arch-terminal .terminal-body {
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .tree-line {
+      color: var(--text-muted);
+    }
+
+    .tree-line .dir {
+      color: var(--accent);
+    }
+
+    .tree-line .file {
+      color: var(--text-secondary);
+    }
+
+    .tree-line .desc {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ==================== COMMANDS TABLE ==================== */
+    .commands-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .command-group {
+      background: var(--bg-card);
+      padding: 24px;
+    }
+
+    .command-group-title {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .command-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 6px 0;
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
+    .command-item .cmd-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .command-item .cmd-desc {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* ==================== CTA ==================== */
+    .cta-section {
+      text-align: center;
+      padding: 120px 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cta-title {
+      font-family: var(--font-mono);
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .cta-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-large {
+      padding: 14px 32px;
+      font-size: 15px;
+      border-radius: 8px;
+    }
+
+    /* ==================== FOOTER ==================== */
+    footer {
       position: relative;
-    }
-    .glitch::before, .glitch::after {
-      content: attr(data-text);
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-    }
-    .glitch::before {
-      animation: glitch-1 2s infinite linear;
-      clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-      color: var(--cyan);
-    }
-    .glitch::after {
-      animation: glitch-2 2s infinite linear;
-      clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-      color: var(--red);
-    }
-    @keyframes glitch-1 {
-      0%, 100% { transform: translate(0); }
-      20% { transform: translate(-2px, 2px); }
-      40% { transform: translate(2px, -2px); }
-      60% { transform: translate(-1px, 1px); }
-      80% { transform: translate(1px, -1px); }
-    }
-    @keyframes glitch-2 {
-      0%, 100% { transform: translate(0); }
-      20% { transform: translate(2px, -2px); }
-      40% { transform: translate(-2px, 2px); }
-      60% { transform: translate(1px, -1px); }
-      80% { transform: translate(-1px, 1px); }
+      z-index: 1;
+      padding: 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    /* ── Glow ─── */
-    .glow-green { text-shadow: 0 0 20px rgba(0, 255, 65, 0.5); }
-    .glow-red { text-shadow: 0 0 20px rgba(255, 0, 60, 0.5); }
-    .glow-cyan { text-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+    .footer-left {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+
+    /* ==================== DIVIDER ==================== */
+    .section-divider {
+      height: 1px;
+      background: var(--border);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ==================== RESPONSIVE ==================== */
+    @media (max-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .commands-grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 24px 60px; }
+      section { padding: 60px 24px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .stats-bar { flex-direction: column; }
+      .stat-item { padding: 24px; }
+      footer { flex-direction: column; gap: 24px; text-align: center; }
+      .hero-logo-text { letter-spacing: -1px; }
+    }
+
+    /* ==================== GLOW EFFECTS ==================== */
+    .glow-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.3;
+    }
+
+    /* ==================== SCROLL ANIMATIONS ==================== */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
-  <canvas id="matrix-canvas"></canvas>
-  <div class="scanline"></div>
 
-  <!-- ── Nav ─── -->
+  <!-- MATRIX RAIN CANVAS -->
+  <canvas id="matrix-canvas"></canvas>
+
+  <!-- NAVIGATION -->
   <nav>
-    <div class="container">
-      <a href="#" class="nav-logo">OPEN<span>DESKTOP</span></a>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#demo">Demo</a>
-        <a href="#providers">Providers</a>
-        <a href="#compare">Compare</a>
-        <a href="https://github.com/Atum246/OpenDesktop" target="_blank">GitHub</a>
-        <a href="https://www.npmjs.com/package/opendesktop-ai" target="_blank">npm</a>
-        <a href="#" class="nav-cta">npm install -g opendesktop-ai</a>
-      </div>
+    <a href="#" class="nav-logo">opendesktop<span>.ai</span></a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#providers">Providers</a></li>
+      <li><a href="#architecture">Architecture</a></li>
+      <li><a href="#commands">Commands</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="https://github.com/Atum246/OpenDesktop" target="_blank" class="btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+      <a href="https://www.npmjs.com/package/opendesktop-ai" target="_blank" class="btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0v16h16V0H0zm12.8 12.8h-1.6V4.8H8v8H4.8V4.8H3.2v8H1.6V3.2h11.2v9.6z"/></svg>
+        npm
+      </a>
+      <a href="#install" class="btn-primary">Get Started</a>
     </div>
   </nav>
 
-  <!-- ── Hero ─── -->
+  <!-- HERO -->
   <section class="hero">
-    <div class="container">
-      <div class="hero-badge"><span class="dot"></span> v2.1.0 — OPEN SOURCE — MIT LICENSE</div>
-      <pre class="hero-ascii" aria-hidden="true">
- ██████╗ ██████╗ ███████╗███╗   ██╗██████╗ ███████╗███████╗██╗  ██╗████████╗ ██████╗ ██████╗
-██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝██╔═══██╗██╔══██╗
-██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║  ██║█████╗  ███████╗█████╔╝    ██║   ██║   ██║██████╔╝
-██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║   ██║   ██║██╔══██╗
-╚██████╔╝██║     ███████╗██║ ╚████║██████╔╝███████╗███████║██║  ██╗   ██║   ╚██████╔╝██║  ██║
- ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
-      </pre>
-      <h1>The AI <span class="highlight glitch" data-text="Intelligence Agent">Intelligence Agent</span></h1>
-      <p>Not a chatbot. A self-improving desktop agent that controls your computer, researches the web, spawns AI armies, trains custom models, and gets smarter every single interaction.</p>
-      <div class="hero-buttons">
-        <a href="https://github.com/Atum246/OpenDesktop" class="btn btn-primary" target="_blank">★ Star on GitHub</a>
-        <a href="https://www.npmjs.com/package/opendesktop-ai" class="btn btn-secondary" target="_blank">📦 View on npm</a>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        NOT A CHATBOT. AN INTELLIGENCE AGENT.
       </div>
-      <div class="hero-install">
-        <code>curl -fsSL https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.sh | bash</code>
+
+      <div class="hero-logo-text">
+        <span class="open">Open</span><span class="desktop">Desktop</span>
+      </div>
+
+      <p class="hero-subtitle">
+        A self-improving, self-rewriting AI desktop agent that controls your computer, researches the web, spawns AI armies, trains custom models, and gets smarter every single interaction.
+        <span class="highlight">44 subsystems. 37 modules. 50+ AI providers.</span>
+      </p>
+
+      <!-- Animated Terminal -->
+      <div class="terminal-hero">
+        <div class="terminal-header">
+          <span class="terminal-dot red"></span>
+          <span class="terminal-dot yellow"></span>
+          <span class="terminal-dot green"></span>
+          <span class="terminal-title">terminal -- opendesktop</span>
+        </div>
+        <div class="terminal-body" id="terminal-anim">
+          <!-- Lines injected by JS -->
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ── Stats ─── -->
-  <section class="stats">
-    <div class="container">
-      <div class="stats-grid">
-        <div><div class="stat-number glow-green">50+</div><div class="stat-label">AI Providers</div></div>
-        <div><div class="stat-number glow-green">44</div><div class="stat-label">Subsystems</div></div>
-        <div><div class="stat-number glow-green">37</div><div class="stat-label">Languages</div></div>
-        <div><div class="stat-number glow-green">151</div><div class="stat-label">Tests Passing</div></div>
-      </div>
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-number">44</div>
+      <div class="stat-label">Subsystems</div>
     </div>
-  </section>
+    <div class="stat-item">
+      <div class="stat-number">37</div>
+      <div class="stat-label">Modules</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">50+</div>
+      <div class="stat-label">AI Providers</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">37</div>
+      <div class="stat-label">Languages</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">20</div>
+      <div class="stat-label">Platforms</div>
+    </div>
+  </div>
 
-  <!-- ── Features ─── -->
+  <!-- FEATURES -->
   <section id="features">
-    <div class="container">
-      <div class="section-label">// CAPABILITIES</div>
-      <div class="section-title">Everything. Everywhere. All at once.</div>
-      <div class="section-desc">44 subsystems across 43 modules. Desktop control, web research, code execution, IoT, voice, vision, security, and self-evolution.</div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🖥️</div>
-          <h3>Desktop Control</h3>
-          <p>Mouse, keyboard, windows, files, clipboard. Full automation of your operating system through natural language.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🌐</div>
-          <h3>Web Research</h3>
-          <p>Real search across DuckDuckGo, Wikipedia, GitHub, StackOverflow, npm. Deep scraping, screenshots, downloads.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💻</div>
-          <h3>Code Execution</h3>
-          <p>37 programming languages. JavaScript, Python, Rust, Go, C++, Java, and 30 more. Real execution, not sandboxed.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🧠</div>
-          <h3>Knowledge Graph Brain</h3>
-          <p>5 memory types with weighted knowledge graph. Auto-relating, decay, consolidation. Never forgets.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🤖</div>
-          <h3>Agent Orchestration</h3>
-          <p>Spawn hundreds of specialized sub-agents. Team-based parallel execution with 8 specializations.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🧬</div>
-          <h3>Self-Evolution</h3>
-          <p>Performance journal, correction learning, skill crystallization. Rewrites its own code to improve.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">👁️</div>
-          <h3>Visual Understanding</h3>
-          <p>Sees your screen, clicks by description, reads text with OCR. Screen diffing and visual memory.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🏠</div>
-          <h3>IoT Control</h3>
-          <p>Philips Hue, LIFX, Tasmota, Home Assistant, MQTT. Device discovery, automation rules.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <h3>20 Messaging Platforms</h3>
-          <p>Telegram, Discord, WhatsApp, Slack, Signal, IRC, Matrix, and 13 more. One agent, every channel.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔒</div>
-          <h3>Security</h3>
-          <p>AES-256 encryption, audit logging, sandbox mode, rate limiting, anomaly detection, permission tiers.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🎤</div>
-          <h3>Voice Control</h3>
-          <p>Text-to-speech, speech-to-text, wake word activation. Talk to your computer naturally.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🚀</div>
-          <h3>18 Deploy Targets</h3>
-          <p>Vercel, Netlify, Docker, AWS, GCP, Azure, Heroku, Fly.io, Railway, and 9 more. Ship anywhere.</p>
-        </div>
+    <div class="reveal">
+      <div class="section-label">// Capabilities</div>
+      <h2 class="section-title">Everything your computer can do. Now autonomous.</h2>
+      <p class="section-desc">OpenDesktop is not a chatbot with a terminal plugin. It is a full intelligence agent with deep OS integration, visual understanding, and the ability to rewrite its own code.</p>
+    </div>
+
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <div class="feature-icon">&gt;_</div>
+        <div class="feature-title">Desktop Control</div>
+        <div class="feature-desc">Mouse, keyboard, window management, file operations, clipboard intelligence, process monitoring. Full OS integration.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">[ ]</div>
+        <div class="feature-title">Code Intelligence</div>
+        <div class="feature-desc">37 programming languages. Auto detection, project scaffolding, code review, debugging, test generation. Write and execute code in any language.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">{ }</div>
+        <div class="feature-title">Sub-Agent Army</div>
+        <div class="feature-desc">Spawn hundreds of specialized sub-agents. 8 specializations. Team-based parallel execution. Shared knowledge between agents.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">( )</div>
+        <div class="feature-title">Visual Understanding</div>
+        <div class="feature-desc">Screen analysis and OCR. Find and click UI elements by description. Watch mode for continuous monitoring. Read everything on screen.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">~</div>
+        <div class="feature-title">Self-Evolution</div>
+        <div class="feature-desc">Self-code rewriting. Correction learning. Skill crystallization. A/B testing framework. Automatic improvement suggestions. Gets better every interaction.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">#</div>
+        <div class="feature-title">Knowledge Graph Brain</div>
+        <div class="feature-desc">5 memory types. Weighted nodes with auto-relating and decay. Full-text search. Persistent across sessions. Export and import.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">|</div>
+        <div class="feature-title">Web Research</div>
+        <div class="feature-desc">Real web search across DuckDuckGo, Wikipedia, StackOverflow, GitHub, npm. Deep multi-source research. URL scraping. Browser automation.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">*</div>
+        <div class="feature-title">IoT Control</div>
+        <div class="feature-desc">Philips Hue, LIFX, Tasmota, Shelly, Home Assistant. MQTT support. Device discovery. Automation rules. Control your smart home.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">@</div>
+        <div class="feature-title">20 Messaging Platforms</div>
+        <div class="feature-desc">Telegram, Discord, WhatsApp, Slack, Signal, iMessage, IRC, Matrix, LINE, Viber, MS Teams, Twitch, Email, SMS, and more.</div>
       </div>
     </div>
   </section>
 
-  <!-- ── Demo ─── -->
-  <section id="demo">
-    <div class="container">
-      <div class="section-label">// INTERACTIVE</div>
-      <div class="section-title">See it in action</div>
-      <div class="section-desc">A real conversation with OpenDesktop. Not simulated. Not scripted.</div>
-      <div class="terminal-demo">
-        <div class="code-header">
-          <div class="code-dot red"></div>
-          <div class="code-dot yellow"></div>
-          <div class="code-dot green"></div>
-          <span class="code-title">opendesktop — terminal</span>
+  <!-- INSTALL -->
+  <section id="install" class="install-section">
+    <div class="reveal">
+      <div class="section-label">// Installation</div>
+      <h2 class="section-title">Up and running in seconds.</h2>
+      <p class="section-desc">One command. That is it. Works on Linux, macOS, and Windows.</p>
+    </div>
+
+    <div class="install-grid reveal">
+      <div class="install-card">
+        <div class="install-card-header">
+          <span class="label">Quick Install</span>
+          <span class="tag">RECOMMENDED</span>
         </div>
-        <div class="terminal-body" id="terminal-demo">
-          <div class="terminal-line">
-            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
-            <span class="terminal-input">deploy my app to vercel</span>
-          </div>
-          <div class="terminal-output">🚀 Deploying to Vercel...</div>
-          <div class="terminal-output">✅ Deployed! https://my-app.vercel.app</div>
+        <div class="install-code">
+          <span class="comment"># Install via curl</span><br>
+          <span class="cmd">curl</span> <span class="flag">-fsSL</span> \<br>
+          &nbsp;&nbsp;https://raw.githubusercontent.com/<br>
+          &nbsp;&nbsp;Atum246/OpenDesktop/main/install.sh | <span class="cmd">bash</span><br>
           <br>
-          <div class="terminal-line">
-            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
-            <span class="terminal-input">find all TODO comments in my codebase</span>
-          </div>
-          <div class="terminal-output">🔍 Scanning codebase...</div>
-          <div class="terminal-output">Found 12 TODOs across 5 files:</div>
-          <div class="terminal-output">  src/api/auth.js:42 — TODO: add refresh token</div>
-          <div class="terminal-output">  src/ui/dashboard.tsx:88 — TODO: responsive layout</div>
-          <div class="terminal-output">  ... and 10 more</div>
+          <span class="comment"># Start the agent</span><br>
+          <span class="cmd">opendesktop</span>
+        </div>
+      </div>
+
+      <div class="install-card">
+        <div class="install-card-header">
+          <span class="label">npm</span>
+          <span class="tag">NPM</span>
+        </div>
+        <div class="install-code">
+          <span class="comment"># Install globally via npm</span><br>
+          <span class="cmd">npm</span> install <span class="flag">-g</span> opendesktop-ai<br>
           <br>
-          <div class="terminal-line">
-            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
-            <span class="terminal-input">what's my battery level?</span>
-          </div>
-          <div class="terminal-output">🔋 Battery: 73% — Charging</div>
+          <span class="comment"># Run setup wizard</span><br>
+          <span class="cmd">opendesktop</span> <span class="flag">--setup</span><br>
           <br>
-          <div class="terminal-line">
-            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
-            <span class="terminal-input"><span class="terminal-cursor"></span></span>
-          </div>
+          <span class="comment"># Launch</span><br>
+          <span class="cmd">opendesktop</span>
+        </div>
+      </div>
+
+      <div class="install-card">
+        <div class="install-card-header">
+          <span class="label">Docker</span>
+          <span class="tag">DOCKER</span>
+        </div>
+        <div class="install-code">
+          <span class="comment"># Build the image</span><br>
+          <span class="cmd">docker</span> build <span class="flag">-t</span> opendesktop .<br>
+          <br>
+          <span class="comment"># Run the container</span><br>
+          <span class="cmd">docker</span> run <span class="flag">-it</span> \<br>
+          &nbsp;&nbsp;<span class="flag">-p</span> 4444:4444 \<br>
+          &nbsp;&nbsp;<span class="flag">-e</span> <span class="string">OPENDESKTOP_API_KEY=your-key</span> \<br>
+          &nbsp;&nbsp;opendesktop
+        </div>
+      </div>
+
+      <div class="install-card">
+        <div class="install-card-header">
+          <span class="label">Requirements</span>
+          <span class="tag">SYSTEM</span>
+        </div>
+        <div class="install-code">
+          <span class="comment"># Minimum requirements</span><br>
+          Node.js &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v18.0.0 &nbsp;(v20+ recommended)<br>
+          npm &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v8.0.0 &nbsp;(v10+ recommended)<br>
+          RAM &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4GB &nbsp;&nbsp;&nbsp;(8GB+ recommended)<br>
+          OS &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Linux, macOS 12+, Win 10+<br>
+          Network &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Internet connection
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── Providers ─── -->
-  <section id="providers">
-    <div class="container">
-      <div class="section-label">// AI PROVIDERS</div>
-      <div class="section-title">50+ providers. One interface.</div>
-      <div class="section-desc">Use any model from any provider. Cloud, local, or self-hosted. Switch anytime.</div>
-      <div class="providers-grid">
-        <div class="provider-chip">OpenRouter</div>
-        <div class="provider-chip">OpenAI</div>
-        <div class="provider-chip">Anthropic</div>
-        <div class="provider-chip">Google AI</div>
-        <div class="provider-chip">Groq</div>
-        <div class="provider-chip">DeepSeek</div>
-        <div class="provider-chip">Mistral</div>
-        <div class="provider-chip">xAI (Grok)</div>
-        <div class="provider-chip">Cohere</div>
-        <div class="provider-chip">Perplexity</div>
-        <div class="provider-chip">Ollama</div>
-        <div class="provider-chip">LM Studio</div>
-        <div class="provider-chip">vLLM</div>
-        <div class="provider-chip">Nvidia NIM</div>
-        <div class="provider-chip">Together AI</div>
-        <div class="provider-chip">Fireworks</div>
-        <div class="provider-chip">Replicate</div>
-        <div class="provider-chip">HuggingFace</div>
-        <div class="provider-chip">Moonshot</div>
-        <div class="provider-chip">Zhipu (GLM)</div>
-        <div class="provider-chip">Baidu</div>
-        <div class="provider-chip">Alibaba</div>
-        <div class="provider-chip">01.AI (Yi)</div>
-        <div class="provider-chip">SiliconFlow</div>
+  <!-- PROVIDERS -->
+  <section id="providers" class="providers-section">
+    <div class="reveal">
+      <div class="section-label">// AI Providers</div>
+      <h2 class="section-title">50+ providers. One interface. Zero lock-in.</h2>
+      <p class="section-desc">Use any model from any provider. Switch with a single command. No code changes required.</p>
+    </div>
+
+    <div class="providers-grid reveal">
+      <div class="provider-item"><div class="provider-name">OpenRouter</div><div class="provider-count">200+ models</div></div>
+      <div class="provider-item"><div class="provider-name">OpenAI</div><div class="provider-count">GPT-4o, o1</div></div>
+      <div class="provider-item"><div class="provider-name">Anthropic</div><div class="provider-count">Claude 3.5</div></div>
+      <div class="provider-item"><div class="provider-name">Google AI</div><div class="provider-count">Gemini Pro</div></div>
+      <div class="provider-item"><div class="provider-name">Groq</div><div class="provider-count">Llama 3.1</div></div>
+      <div class="provider-item"><div class="provider-name">DeepSeek</div><div class="provider-count">Chat, Coder</div></div>
+      <div class="provider-item"><div class="provider-name">xAI</div><div class="provider-count">Grok 2</div></div>
+      <div class="provider-item"><div class="provider-name">Mistral</div><div class="provider-count">Large, Mixtral</div></div>
+      <div class="provider-item"><div class="provider-name">Cohere</div><div class="provider-count">Command R+</div></div>
+      <div class="provider-item"><div class="provider-name">Perplexity</div><div class="provider-count">Sonar</div></div>
+      <div class="provider-item"><div class="provider-name">01.AI</div><div class="provider-count">Yi Large</div></div>
+      <div class="provider-item"><div class="provider-name">Moonshot</div><div class="provider-count">128k context</div></div>
+      <div class="provider-item"><div class="provider-name">Zhipu AI</div><div class="provider-count">GLM-4</div></div>
+      <div class="provider-item"><div class="provider-name">Baidu</div><div class="provider-count">ERNIE 4.0</div></div>
+      <div class="provider-item"><div class="provider-name">Alibaba</div><div class="provider-count">Qwen Max</div></div>
+      <div class="provider-item"><div class="provider-name">MiniMax</div><div class="provider-count">Abab 6.5</div></div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="reveal">
+      <div class="section-label">// Architecture</div>
+      <h2 class="section-title">Modular by design. Extensible by nature.</h2>
+      <p class="section-desc">37 independent modules orchestrated by a central engine. Every subsystem is isolated, testable, and replaceable.</p>
+    </div>
+
+    <div class="arch-terminal reveal">
+      <div class="terminal-header">
+        <span class="terminal-dot red"></span>
+        <span class="terminal-dot yellow"></span>
+        <span class="terminal-dot green"></span>
+        <span class="terminal-title">project structure</span>
+      </div>
+      <div class="terminal-body">
+        <div class="tree-line"><span class="dir">OpenDesktop/</span></div>
+        <div class="tree-line">&nbsp;&nbsp;├── <span class="file">bin/opendesktop</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># CLI entry point</span></div>
+        <div class="tree-line">&nbsp;&nbsp;├── <span class="dir">src/</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">core/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># Engine + config (44 subsystems)</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">providers/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># 50+ AI providers</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">brain/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># Knowledge graph brain</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">os-integration/</span> &nbsp;&nbsp;&nbsp;<span class="desc"># Deep OS control</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">evolution/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># Self-evolution system</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">sub-agents/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># Agent orchestrator</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">security/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># AES-256, audit logging</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">visual-understanding/</span> <span class="desc"># Screen vision + OCR</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">iot/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># Smart home control</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;├── <span class="dir">messaging/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># 20 chat platforms</span></div>
+        <div class="tree-line">&nbsp;&nbsp;│&nbsp;&nbsp;└── <span class="dir">...</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># 25 more modules</span></div>
+        <div class="tree-line">&nbsp;&nbsp;├── <span class="file">tests/test.js</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># 119 tests</span></div>
+        <div class="tree-line">&nbsp;&nbsp;├── <span class="file">Dockerfile</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="desc"># Docker support</span></div>
+        <div class="tree-line">&nbsp;&nbsp;└── <span class="file">package.json</span></div>
       </div>
     </div>
   </section>
 
-  <!-- ── Compare ─── -->
-  <section id="compare">
-    <div class="container">
-      <div class="section-label">// COMPARISON</div>
-      <div class="section-title">OpenDesktop vs. Everything Else</div>
-      <div class="section-desc">Not another wrapper. A real intelligence agent.</div>
-      <div style="overflow-x: auto;">
-        <table class="comparison-table">
-          <thead>
-            <tr>
-              <th>Feature</th>
-              <th>ChatGPT / Claude</th>
-              <th>OpenDesktop</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>Control your computer</td><td class="cross">❌</td><td class="check">✅ Mouse, keyboard, windows</td></tr>
-            <tr><td>Browse the web</td><td class="cross">Limited</td><td class="check">✅ Real search, scraping</td></tr>
-            <tr><td>Execute code</td><td class="cross">Sandbox only</td><td class="check">✅ 37 languages, real execution</td></tr>
-            <tr><td>Persistent memory</td><td class="cross">❌</td><td class="check">✅ Knowledge graph brain</td></tr>
-            <tr><td>Self-improving</td><td class="cross">❌</td><td class="check">✅ Rewrites its own code</td></tr>
-            <tr><td>Spawn AI agents</td><td class="cross">❌</td><td class="check">✅ Hundreds of specialized agents</td></tr>
-            <tr><td>IoT control</td><td class="cross">❌</td><td class="check">✅ Smart lights, plugs, thermostats</td></tr>
-            <tr><td>Voice control</td><td class="cross">❌</td><td class="check">✅ TTS, STT, wake word</td></tr>
-            <tr><td>20 messaging platforms</td><td class="cross">❌</td><td class="check">✅ Telegram, Discord, WhatsApp...</td></tr>
-            <tr><td>Visual understanding</td><td class="cross">❌</td><td class="check">✅ Sees screen, clicks by description</td></tr>
-            <tr><td>Deploy projects</td><td class="cross">❌</td><td class="check">✅ 18 cloud targets</td></tr>
-            <tr><td>API gateway</td><td class="cross">❌</td><td class="check">✅ REST, WebSocket, webhooks</td></tr>
-            <tr><td>Open source</td><td class="cross">❌</td><td class="check">✅ MIT License</td></tr>
-          </tbody>
-        </table>
+  <!-- COMMANDS -->
+  <section id="commands">
+    <div class="reveal">
+      <div class="section-label">// Commands</div>
+      <h2 class="section-title">Full control from the terminal.</h2>
+      <p class="section-desc">Over 100 slash commands for every subsystem. Type /help to see them all.</p>
+    </div>
+
+    <div class="commands-grid reveal">
+      <div class="command-group">
+        <div class="command-group-title">Desktop</div>
+        <div class="command-item"><span class="cmd-name">/screen</span><span class="cmd-desc">Screenshot and analyze</span></div>
+        <div class="command-item"><span class="cmd-name">/click</span><span class="cmd-desc">Click element by description</span></div>
+        <div class="command-item"><span class="cmd-name">/open</span><span class="cmd-desc">Open application</span></div>
+        <div class="command-item"><span class="cmd-name">/browse</span><span class="cmd-desc">Open URL in browser</span></div>
+        <div class="command-item"><span class="cmd-name">/processes</span><span class="cmd-desc">List running processes</span></div>
+        <div class="command-item"><span class="cmd-name">/lock</span><span class="cmd-desc">Lock screen</span></div>
+      </div>
+      <div class="command-group">
+        <div class="command-group-title">Code</div>
+        <div class="command-item"><span class="cmd-name">/code</span><span class="cmd-desc">Execute code (37 languages)</span></div>
+        <div class="command-item"><span class="cmd-name">/project</span><span class="cmd-desc">Scaffold new project</span></div>
+        <div class="command-item"><span class="cmd-name">/deploy</span><span class="cmd-desc">Deploy to 18 targets</span></div>
+        <div class="command-item"><span class="cmd-name">/code-review</span><span class="cmd-desc">Review code file</span></div>
+        <div class="command-item"><span class="cmd-name">/debug</span><span class="cmd-desc">Debug error message</span></div>
+        <div class="command-item"><span class="cmd-name">/generate-tests</span><span class="cmd-desc">Generate test suite</span></div>
+      </div>
+      <div class="command-group">
+        <div class="command-group-title">Intelligence</div>
+        <div class="command-item"><span class="cmd-name">/orchestrate</span><span class="cmd-desc">Spawn agent team</span></div>
+        <div class="command-item"><span class="cmd-name">/deep-search</span><span class="cmd-desc">Multi-source research</span></div>
+        <div class="command-item"><span class="cmd-name">/evolve</span><span class="cmd-desc">Trigger self-evolution</span></div>
+        <div class="command-item"><span class="cmd-name">/brain</span><span class="cmd-desc">Knowledge graph status</span></div>
+        <div class="command-item"><span class="cmd-name">/proactive</span><span class="cmd-desc">Proactive insights</span></div>
+        <div class="command-item"><span class="cmd-name">/correct</span><span class="cmd-desc">Teach correction</span></div>
+      </div>
+      <div class="command-group">
+        <div class="command-group-title">System</div>
+        <div class="command-item"><span class="cmd-name">/backup</span><span class="cmd-desc">Backup management</span></div>
+        <div class="command-item"><span class="cmd-name">/schedule</span><span class="cmd-desc">Task scheduler</span></div>
+        <div class="command-item"><span class="cmd-name">/monitor</span><span class="cmd-desc">Performance metrics</span></div>
+        <div class="command-item"><span class="cmd-name">/marketplace</span><span class="cmd-desc">Plugin marketplace</span></div>
+        <div class="command-item"><span class="cmd-name">/trust</span><span class="cmd-desc">Trust and safety</span></div>
+        <div class="command-item"><span class="cmd-name">/profiles</span><span class="cmd-desc">Config profiles</span></div>
       </div>
     </div>
   </section>
 
-  <!-- ── CTA ─── -->
+  <!-- CTA -->
   <section class="cta-section">
-    <div class="container">
-      <h2>Ready to meet the <span class="highlight glow-green">agent</span>?</h2>
-      <p>Open source. Self-improving. Gets smarter every interaction.</p>
-      <div class="hero-buttons">
-        <a href="https://github.com/Atum246/OpenDesktop" class="btn btn-primary" target="_blank">★ Star on GitHub</a>
-        <a href="https://www.npmjs.com/package/opendesktop-ai" class="btn btn-secondary" target="_blank">📦 npm install</a>
+    <div class="reveal">
+      <div class="cta-title">Take the pill.</div>
+      <p class="cta-desc">OpenDesktop is open source and free to use. Install it. Break it. Make it better.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/Atum246/OpenDesktop" target="_blank" class="btn-primary btn-large">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+        <a href="https://www.npmjs.com/package/opendesktop-ai" target="_blank" class="btn-ghost btn-large">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0v16h16V0H0zm12.8 12.8h-1.6V4.8H8v8H4.8V4.8H3.2v8H1.6V3.2h11.2v9.6z"/></svg>
+          View on npm
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- ── Footer ─── -->
+  <!-- FOOTER -->
   <footer>
-    <div class="container">
-      <p>Built with ❤️ by <a href="https://github.com/Atum246">OpenDesktop Contributors</a> · <a href="https://github.com/Atum246/OpenDesktop/blob/main/LICENSE">MIT License</a></p>
+    <div class="footer-left">OpenDesktop &mdash; Built by Atum246</div>
+    <div class="footer-links">
+      <a href="https://github.com/Atum246/OpenDesktop" target="_blank">GitHub</a>
+      <a href="https://www.npmjs.com/package/opendesktop-ai" target="_blank">npm</a>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
     </div>
   </footer>
 
-  <!-- ── Matrix Rain ─── -->
   <script>
-    (function() {
-      const canvas = document.getElementById('matrix-canvas');
-      const ctx = canvas.getContext('2d');
+    // ==================== MATRIX RAIN ====================
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:<>?~`';
-      const fontSize = 14;
-      const columns = Math.floor(canvas.width / fontSize);
-      const drops = new Array(columns).fill(1);
-      function draw() {
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.font = fontSize + 'px monospace';
-        for (let i = 0; i < drops.length; i++) {
-          ctx.fillStyle = Math.random() > 0.98 ? '#ff003c' : '#00ff41';
-          ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
-          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-          drops[i]++;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:,.<>?/~`';
+    const fontSize = 14;
+    let columns = Math.floor(canvas.width / fontSize);
+    let drops = Array(columns).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#00ff88';
+      ctx.font = fontSize + 'px JetBrains Mono, monospace';
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.globalAlpha = Math.random() * 0.5 + 0.1;
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
         }
+        drops[i]++;
       }
-      setInterval(draw, 50);
-      window.addEventListener('resize', () => {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(drawMatrix);
+    }
+
+    window.addEventListener('resize', () => {
+      columns = Math.floor(canvas.width / fontSize);
+      drops = Array(columns).fill(1);
+    });
+
+    drawMatrix();
+
+    // ==================== TERMINAL ANIMATION ====================
+    const terminalEl = document.getElementById('terminal-anim');
+    const lines = [
+      { type: 'input', prompt: '$ ', text: 'curl -fsSL https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.sh | bash' },
+      { type: 'output', text: 'Installing OpenDesktop...' },
+      { type: 'output', text: 'Downloading core modules... OK' },
+      { type: 'output', text: 'Configuring 44 subsystems... OK' },
+      { type: 'output', text: 'Initializing knowledge graph brain... OK' },
+      { type: 'output', text: 'Loading 50+ AI providers... OK' },
+      { type: 'success', text: 'OpenDesktop installed successfully.' },
+      { type: 'blank' },
+      { type: 'input', prompt: '$ ', text: 'opendesktop' },
+      { type: 'output', text: '' },
+      { type: 'output', text: '  ██████╗ ██████╗ ███████╗███╗   ██╗██████╗ ███████╗███████╗██╗  ██╗████████╗' },
+      { type: 'output', text: '  ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝' },
+      { type: 'output', text: '  ██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║  ██║█████╗  ███████╗█████╔╝    ██║   ' },
+      { type: 'output', text: '  ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║   ' },
+      { type: 'output', text: '  ╚██████╔╝██║     ███████╗██║ ╚████║██████╔╝███████╗███████║██║  ██╗   ██║   ' },
+      { type: 'output', text: '   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝   ' },
+      { type: 'blank' },
+      { type: 'success', text: '  NOT A CHATBOT. AN INTELLIGENCE AGENT.' },
+      { type: 'blank' },
+      { type: 'output', text: '  Ready. Type /help for commands.' },
+      { type: 'input', prompt: '  > ', text: '', cursor: true },
+    ];
+
+    let lineIndex = 0;
+
+    function addLine() {
+      if (lineIndex >= lines.length) return;
+
+      const line = lines[lineIndex];
+      const div = document.createElement('div');
+      div.className = 'terminal-line';
+      div.style.animationDelay = '0s';
+
+      if (line.type === 'blank') {
+        div.innerHTML = '&nbsp;';
+      } else if (line.type === 'input') {
+        div.innerHTML = `<span class="prompt">${line.prompt}</span><span class="command">${line.text}</span>`;
+      } else if (line.type === 'success') {
+        div.innerHTML = `<span class="success">${line.text}</span>`;
+      } else {
+        div.innerHTML = `<span class="output">${line.text}</span>`;
+      }
+
+      if (line.cursor) {
+        div.innerHTML += '<span class="cursor-blink"></span>';
+      }
+
+      terminalEl.appendChild(div);
+      terminalEl.scrollTop = terminalEl.scrollHeight;
+      lineIndex++;
+
+      const delay = line.type === 'blank' ? 100 :
+                    line.type === 'input' ? 800 :
+                    line.text.length > 60 ? 400 : 200;
+      setTimeout(addLine, delay);
+    }
+
+    // Start terminal animation after a short delay
+    setTimeout(addLine, 1000);
+
+    // ==================== SCROLL REVEAL ====================
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
       });
-    })();
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ==================== SMOOTH SCROLL ====================
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
   </script>
+
 </body>
 </html>
