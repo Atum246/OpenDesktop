@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenDesktop — The AI Intelligence Agent</title>
+  <meta name="description" content="Not a chatbot. A self-improving AI desktop agent that controls your computer, researches the web, spawns AI armies, and gets smarter every interaction.">
+  <meta property="og:title" content="OpenDesktop — The AI Intelligence Agent">
+  <meta property="og:description" content="Self-improving AI desktop agent. 50+ providers. 37 languages. 20 messaging platforms. Open source.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green: #00ff41;
+      --red: #ff003c;
+      --cyan: #00ffff;
+      --yellow: #ffd700;
+      --purple: #b967ff;
+      --bg: #0a0a0a;
+      --bg-panel: rgba(10, 10, 10, 0.85);
+      --border: rgba(0, 255, 65, 0.15);
+      --text: #c0c0c0;
+      --text-bright: #ffffff;
+      --font-mono: 'Fira Code', 'Courier New', monospace;
+      --font-sans: 'Space Grotesk', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── Matrix Canvas ─── */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.12;
+    }
+
+    /* ── Scanline ─── */
+    .scanline {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 65, 0.015) 2px,
+        rgba(0, 255, 65, 0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Container ─── */
+    .container {
+      position: relative;
+      z-index: 2;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Nav ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--green);
+      text-decoration: none;
+      letter-spacing: 2px;
+    }
+    .nav-logo span { color: var(--red); }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .nav-links a:hover { color: var(--green); }
+    .nav-cta {
+      background: var(--green) !important;
+      color: var(--bg) !important;
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-weight: 700 !important;
+      font-family: var(--font-mono) !important;
+      font-size: 13px !important;
+      transition: box-shadow 0.2s !important;
+    }
+    .nav-cta:hover {
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+    }
+
+    /* ── Hero ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding-top: 64px;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--green);
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+    }
+    .hero-badge .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .hero-ascii {
+      font-family: var(--font-mono);
+      font-size: clamp(10px, 1.8vw, 18px);
+      color: var(--green);
+      white-space: pre;
+      line-height: 1.1;
+      margin-bottom: 32px;
+      text-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+      animation: flicker 4s infinite;
+    }
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      92% { opacity: 1; }
+      93% { opacity: 0.8; }
+      94% { opacity: 1; }
+      96% { opacity: 0.9; }
+      97% { opacity: 1; }
+    }
+    .hero h1 {
+      font-family: var(--font-sans);
+      font-size: clamp(32px, 5vw, 64px);
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 24px;
+      line-height: 1.1;
+    }
+    .hero h1 .highlight { color: var(--green); }
+    .hero p {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--text);
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--green);
+      color: var(--bg);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 30px rgba(0, 255, 65, 0.4);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+    .btn-secondary:hover {
+      background: rgba(0, 255, 65, 0.1);
+      transform: translateY(-2px);
+    }
+    .hero-install {
+      margin-top: 40px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text);
+      background: rgba(0, 255, 65, 0.05);
+      border: 1px solid var(--border);
+      padding: 16px 24px;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    .hero-install code {
+      color: var(--green);
+      user-select: all;
+    }
+
+    /* ── Stats ─── */
+    .stats {
+      padding: 80px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      text-align: center;
+    }
+    .stat-number {
+      font-family: var(--font-mono);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: var(--text);
+      margin-top: 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ── Sections ─── */
+    section { padding: 100px 0; }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--green);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 20px;
+      line-height: 1.15;
+    }
+    .section-desc {
+      font-size: 18px;
+      color: var(--text);
+      max-width: 640px;
+      margin-bottom: 48px;
+    }
+
+    /* ── Features Grid ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      transition: all 0.3s;
+    }
+    .feature-card:hover {
+      border-color: var(--green);
+      box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 12px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── Code Block ─── */
+    .code-showcase {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 48px 0;
+    }
+    .code-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: rgba(0, 255, 65, 0.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+    }
+    .code-dot.red { background: #ff5f57; }
+    .code-dot.yellow { background: #febc2e; }
+    .code-dot.green { background: #28c840; }
+    .code-title {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text);
+      margin-left: 12px;
+    }
+    .code-body {
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+    .code-body .prompt { color: var(--green); }
+    .code-body .cmd { color: var(--text-bright); }
+    .code-body .comment { color: #555; }
+    .code-body .output { color: var(--cyan); }
+    .code-body .highlight { color: var(--yellow); }
+
+    /* ── Terminal Demo ─── */
+    .terminal-demo {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .terminal-body {
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.8;
+      min-height: 300px;
+    }
+    .terminal-line {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .terminal-prompt { color: var(--green); white-space: nowrap; }
+    .terminal-input { color: var(--text-bright); }
+    .terminal-output { color: var(--text); padding-left: 20px; }
+    .terminal-cursor {
+      display: inline-block;
+      width: 8px; height: 16px;
+      background: var(--green);
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+      margin-left: 2px;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ── Providers ─── */
+    .providers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .provider-chip {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text);
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .provider-chip:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* ── Comparison Table ─── */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .comparison-table th, .comparison-table td {
+      padding: 14px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison-table th {
+      font-family: var(--font-mono);
+      color: var(--green);
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .comparison-table td { color: var(--text); }
+    .comparison-table tr:hover { background: rgba(0, 255, 65, 0.03); }
+    .check { color: var(--green); }
+    .cross { color: #555; }
+
+    /* ── CTA ─── */
+    .cta-section {
+      text-align: center;
+      padding: 120px 0;
+      border-top: 1px solid var(--border);
+    }
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 20px;
+    }
+    .cta-section p {
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 40px;
+    }
+
+    /* ── Footer ─── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+    }
+    footer p {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #555;
+    }
+    footer a { color: var(--green); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ─── */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+      .hero-ascii { font-size: 8px; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Glitch Effect ─── */
+    .glitch {
+      position: relative;
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+    .glitch::before {
+      animation: glitch-1 2s infinite linear;
+      clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+      color: var(--cyan);
+    }
+    .glitch::after {
+      animation: glitch-2 2s infinite linear;
+      clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+      color: var(--red);
+    }
+    @keyframes glitch-1 {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(2px, -2px); }
+      60% { transform: translate(-1px, 1px); }
+      80% { transform: translate(1px, -1px); }
+    }
+    @keyframes glitch-2 {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(2px, -2px); }
+      40% { transform: translate(-2px, 2px); }
+      60% { transform: translate(1px, -1px); }
+      80% { transform: translate(-1px, 1px); }
+    }
+
+    /* ── Glow ─── */
+    .glow-green { text-shadow: 0 0 20px rgba(0, 255, 65, 0.5); }
+    .glow-red { text-shadow: 0 0 20px rgba(255, 0, 60, 0.5); }
+    .glow-cyan { text-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-canvas"></canvas>
+  <div class="scanline"></div>
+
+  <!-- ── Nav ─── -->
+  <nav>
+    <div class="container">
+      <a href="#" class="nav-logo">OPEN<span>DESKTOP</span></a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#demo">Demo</a>
+        <a href="#providers">Providers</a>
+        <a href="#compare">Compare</a>
+        <a href="https://github.com/Atum246/OpenDesktop" target="_blank">GitHub</a>
+        <a href="https://www.npmjs.com/package/opendesktop-ai" target="_blank">npm</a>
+        <a href="#" class="nav-cta">npm install -g opendesktop-ai</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Hero ─── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge"><span class="dot"></span> v2.1.0 — OPEN SOURCE — MIT LICENSE</div>
+      <pre class="hero-ascii" aria-hidden="true">
+ ██████╗ ██████╗ ███████╗███╗   ██╗██████╗ ███████╗███████╗██╗  ██╗████████╗ ██████╗ ██████╗
+██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝██╔═══██╗██╔══██╗
+██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║  ██║█████╗  ███████╗█████╔╝    ██║   ██║   ██║██████╔╝
+██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║   ██║   ██║██╔══██╗
+╚██████╔╝██║     ███████╗██║ ╚████║██████╔╝███████╗███████║██║  ██╗   ██║   ╚██████╔╝██║  ██║
+ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
+      </pre>
+      <h1>The AI <span class="highlight glitch" data-text="Intelligence Agent">Intelligence Agent</span></h1>
+      <p>Not a chatbot. A self-improving desktop agent that controls your computer, researches the web, spawns AI armies, trains custom models, and gets smarter every single interaction.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/Atum246/OpenDesktop" class="btn btn-primary" target="_blank">★ Star on GitHub</a>
+        <a href="https://www.npmjs.com/package/opendesktop-ai" class="btn btn-secondary" target="_blank">📦 View on npm</a>
+      </div>
+      <div class="hero-install">
+        <code>curl -fsSL https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.sh | bash</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stats ─── -->
+  <section class="stats">
+    <div class="container">
+      <div class="stats-grid">
+        <div><div class="stat-number glow-green">50+</div><div class="stat-label">AI Providers</div></div>
+        <div><div class="stat-number glow-green">44</div><div class="stat-label">Subsystems</div></div>
+        <div><div class="stat-number glow-green">37</div><div class="stat-label">Languages</div></div>
+        <div><div class="stat-number glow-green">151</div><div class="stat-label">Tests Passing</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ─── -->
+  <section id="features">
+    <div class="container">
+      <div class="section-label">// CAPABILITIES</div>
+      <div class="section-title">Everything. Everywhere. All at once.</div>
+      <div class="section-desc">44 subsystems across 43 modules. Desktop control, web research, code execution, IoT, voice, vision, security, and self-evolution.</div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🖥️</div>
+          <h3>Desktop Control</h3>
+          <p>Mouse, keyboard, windows, files, clipboard. Full automation of your operating system through natural language.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3>Web Research</h3>
+          <p>Real search across DuckDuckGo, Wikipedia, GitHub, StackOverflow, npm. Deep scraping, screenshots, downloads.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💻</div>
+          <h3>Code Execution</h3>
+          <p>37 programming languages. JavaScript, Python, Rust, Go, C++, Java, and 30 more. Real execution, not sandboxed.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🧠</div>
+          <h3>Knowledge Graph Brain</h3>
+          <p>5 memory types with weighted knowledge graph. Auto-relating, decay, consolidation. Never forgets.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>Agent Orchestration</h3>
+          <p>Spawn hundreds of specialized sub-agents. Team-based parallel execution with 8 specializations.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🧬</div>
+          <h3>Self-Evolution</h3>
+          <p>Performance journal, correction learning, skill crystallization. Rewrites its own code to improve.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👁️</div>
+          <h3>Visual Understanding</h3>
+          <p>Sees your screen, clicks by description, reads text with OCR. Screen diffing and visual memory.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏠</div>
+          <h3>IoT Control</h3>
+          <p>Philips Hue, LIFX, Tasmota, Home Assistant, MQTT. Device discovery, automation rules.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>20 Messaging Platforms</h3>
+          <p>Telegram, Discord, WhatsApp, Slack, Signal, IRC, Matrix, and 13 more. One agent, every channel.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Security</h3>
+          <p>AES-256 encryption, audit logging, sandbox mode, rate limiting, anomaly detection, permission tiers.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎤</div>
+          <h3>Voice Control</h3>
+          <p>Text-to-speech, speech-to-text, wake word activation. Talk to your computer naturally.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3>18 Deploy Targets</h3>
+          <p>Vercel, Netlify, Docker, AWS, GCP, Azure, Heroku, Fly.io, Railway, and 9 more. Ship anywhere.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Demo ─── -->
+  <section id="demo">
+    <div class="container">
+      <div class="section-label">// INTERACTIVE</div>
+      <div class="section-title">See it in action</div>
+      <div class="section-desc">A real conversation with OpenDesktop. Not simulated. Not scripted.</div>
+      <div class="terminal-demo">
+        <div class="code-header">
+          <div class="code-dot red"></div>
+          <div class="code-dot yellow"></div>
+          <div class="code-dot green"></div>
+          <span class="code-title">opendesktop — terminal</span>
+        </div>
+        <div class="terminal-body" id="terminal-demo">
+          <div class="terminal-line">
+            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
+            <span class="terminal-input">deploy my app to vercel</span>
+          </div>
+          <div class="terminal-output">🚀 Deploying to Vercel...</div>
+          <div class="terminal-output">✅ Deployed! https://my-app.vercel.app</div>
+          <br>
+          <div class="terminal-line">
+            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
+            <span class="terminal-input">find all TODO comments in my codebase</span>
+          </div>
+          <div class="terminal-output">🔍 Scanning codebase...</div>
+          <div class="terminal-output">Found 12 TODOs across 5 files:</div>
+          <div class="terminal-output">  src/api/auth.js:42 — TODO: add refresh token</div>
+          <div class="terminal-output">  src/ui/dashboard.tsx:88 — TODO: responsive layout</div>
+          <div class="terminal-output">  ... and 10 more</div>
+          <br>
+          <div class="terminal-line">
+            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
+            <span class="terminal-input">what's my battery level?</span>
+          </div>
+          <div class="terminal-output">🔋 Battery: 73% — Charging</div>
+          <br>
+          <div class="terminal-line">
+            <span class="terminal-prompt">⚡ OpenDesktop ❯</span>
+            <span class="terminal-input"><span class="terminal-cursor"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Providers ─── -->
+  <section id="providers">
+    <div class="container">
+      <div class="section-label">// AI PROVIDERS</div>
+      <div class="section-title">50+ providers. One interface.</div>
+      <div class="section-desc">Use any model from any provider. Cloud, local, or self-hosted. Switch anytime.</div>
+      <div class="providers-grid">
+        <div class="provider-chip">OpenRouter</div>
+        <div class="provider-chip">OpenAI</div>
+        <div class="provider-chip">Anthropic</div>
+        <div class="provider-chip">Google AI</div>
+        <div class="provider-chip">Groq</div>
+        <div class="provider-chip">DeepSeek</div>
+        <div class="provider-chip">Mistral</div>
+        <div class="provider-chip">xAI (Grok)</div>
+        <div class="provider-chip">Cohere</div>
+        <div class="provider-chip">Perplexity</div>
+        <div class="provider-chip">Ollama</div>
+        <div class="provider-chip">LM Studio</div>
+        <div class="provider-chip">vLLM</div>
+        <div class="provider-chip">Nvidia NIM</div>
+        <div class="provider-chip">Together AI</div>
+        <div class="provider-chip">Fireworks</div>
+        <div class="provider-chip">Replicate</div>
+        <div class="provider-chip">HuggingFace</div>
+        <div class="provider-chip">Moonshot</div>
+        <div class="provider-chip">Zhipu (GLM)</div>
+        <div class="provider-chip">Baidu</div>
+        <div class="provider-chip">Alibaba</div>
+        <div class="provider-chip">01.AI (Yi)</div>
+        <div class="provider-chip">SiliconFlow</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Compare ─── -->
+  <section id="compare">
+    <div class="container">
+      <div class="section-label">// COMPARISON</div>
+      <div class="section-title">OpenDesktop vs. Everything Else</div>
+      <div class="section-desc">Not another wrapper. A real intelligence agent.</div>
+      <div style="overflow-x: auto;">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>ChatGPT / Claude</th>
+              <th>OpenDesktop</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Control your computer</td><td class="cross">❌</td><td class="check">✅ Mouse, keyboard, windows</td></tr>
+            <tr><td>Browse the web</td><td class="cross">Limited</td><td class="check">✅ Real search, scraping</td></tr>
+            <tr><td>Execute code</td><td class="cross">Sandbox only</td><td class="check">✅ 37 languages, real execution</td></tr>
+            <tr><td>Persistent memory</td><td class="cross">❌</td><td class="check">✅ Knowledge graph brain</td></tr>
+            <tr><td>Self-improving</td><td class="cross">❌</td><td class="check">✅ Rewrites its own code</td></tr>
+            <tr><td>Spawn AI agents</td><td class="cross">❌</td><td class="check">✅ Hundreds of specialized agents</td></tr>
+            <tr><td>IoT control</td><td class="cross">❌</td><td class="check">✅ Smart lights, plugs, thermostats</td></tr>
+            <tr><td>Voice control</td><td class="cross">❌</td><td class="check">✅ TTS, STT, wake word</td></tr>
+            <tr><td>20 messaging platforms</td><td class="cross">❌</td><td class="check">✅ Telegram, Discord, WhatsApp...</td></tr>
+            <tr><td>Visual understanding</td><td class="cross">❌</td><td class="check">✅ Sees screen, clicks by description</td></tr>
+            <tr><td>Deploy projects</td><td class="cross">❌</td><td class="check">✅ 18 cloud targets</td></tr>
+            <tr><td>API gateway</td><td class="cross">❌</td><td class="check">✅ REST, WebSocket, webhooks</td></tr>
+            <tr><td>Open source</td><td class="cross">❌</td><td class="check">✅ MIT License</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ─── -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Ready to meet the <span class="highlight glow-green">agent</span>?</h2>
+      <p>Open source. Self-improving. Gets smarter every interaction.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/Atum246/OpenDesktop" class="btn btn-primary" target="_blank">★ Star on GitHub</a>
+        <a href="https://www.npmjs.com/package/opendesktop-ai" class="btn btn-secondary" target="_blank">📦 npm install</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─── -->
+  <footer>
+    <div class="container">
+      <p>Built with ❤️ by <a href="https://github.com/Atum246">OpenDesktop Contributors</a> · <a href="https://github.com/Atum246/OpenDesktop/blob/main/LICENSE">MIT License</a></p>
+    </div>
+  </footer>
+
+  <!-- ── Matrix Rain ─── -->
+  <script>
+    (function() {
+      const canvas = document.getElementById('matrix-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:<>?~`';
+      const fontSize = 14;
+      const columns = Math.floor(canvas.width / fontSize);
+      const drops = new Array(columns).fill(1);
+      function draw() {
+        ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = fontSize + 'px monospace';
+        for (let i = 0; i < drops.length; i++) {
+          ctx.fillStyle = Math.random() > 0.98 ? '#ff003c' : '#00ff41';
+          ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+          drops[i]++;
+        }
+      }
+      setInterval(draw, 50);
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+    })();
+  </script>
+</body>
+</html>

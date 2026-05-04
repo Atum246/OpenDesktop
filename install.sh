@@ -89,16 +89,17 @@ echo -e "${GREEN}  ✅ npm $(npm -v) found${NC}"
 echo ""
 
 # Install OpenDesktop
-echo -e "${CYAN}  📦 Installing OpenDesktop globally...${NC}"
-npm install -g opendesktop-ai 2>/dev/null || {
+echo -e "${CYAN}  📦 Installing OpenDesktop v2.1.0 globally...${NC}"
+npm install -g opendesktop-ai@2.1.0 2>/dev/null || {
     echo -e "${YELLOW}  ⚠️  Global install failed, trying with sudo...${NC}"
-    sudo npm install -g opendesktop-ai
+    sudo npm install -g opendesktop-ai@2.1.0
 }
 
 # Verify installation
 echo -e "${CYAN}  🔍 Verifying installation...${NC}"
 if command -v opendesktop &> /dev/null || command -v od &> /dev/null; then
-    echo -e "${GREEN}  ✅ OpenDesktop command available!${NC}"
+    INSTALLED_VERSION=$(opendesktop --version 2>/dev/null || od --version 2>/dev/null || echo "unknown")
+    echo -e "${GREEN}  ✅ OpenDesktop command available! (version: ${INSTALLED_VERSION})${NC}"
 else
     echo -e "${YELLOW}  ⚠️  opendesktop command not found in PATH.${NC}"
     NPM_GLOBAL="$(npm root -g 2>/dev/null)/../bin"
