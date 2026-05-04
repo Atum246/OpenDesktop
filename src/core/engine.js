@@ -50,6 +50,12 @@ const PluginMarketplace = require('../marketplace/index.js');
 const PerformanceMonitor = require('../monitor/index.js');
 const NotificationCenter = require('../notifications/index.js');
 const ConfigManager = require('../config-manager/index.js');
+const VectorMemory = require('../vector-memory/index.js');
+const ModelRouter = require('../model-router/index.js');
+const TwoFactor = require('../two-factor/index.js');
+const SelfUpdater = require('../self-updater/index.js');
+const ThemeEngine = require('../theme-engine/index.js');
+const MobileAPI = require('../mobile-api/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -103,13 +109,21 @@ class OpenDesktopEngine {
     this.notifications = new NotificationCenter(this.config);
     this.configManager = new ConfigManager(this.config);
 
+    // ═══ NEW MODULES ═══
+    this.vectorMemory = new VectorMemory(this.config);
+    this.modelRouter = new ModelRouter(this.config);
+    this.twoFactor = new TwoFactor(this.config);
+    this.updater = new SelfUpdater(this.config);
+    this.themeEngine = new ThemeEngine(this.config);
+    this.mobileAPI = new MobileAPI(this.config);
+
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
     this.isRunning = false;
 
-    // Start proactive monitoring
-    this.proactive.start();
-    this.osIntegration.start();
+    // Start proactive monitoring (only when explicitly started)
+    // this.proactive.start();
+    // this.osIntegration.start();
   }
 
   _onHotkey() {
@@ -128,6 +142,8 @@ class OpenDesktopEngine {
     if (this.config.get('messaging.enabled')) await this.messaging.init();
     if (this.config.get('hotkey.enabled')) await this.hotkey.start();
     if (this.config.get('persona.active')) this.persona.activatePersona(this.config.get('persona.active'));
+    this.proactive.start();
+    this.osIntegration.start();
     await this.chatLoop();
   }
 
@@ -1998,6 +2014,135 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         console.log(chalk.hex('#00FF40')(`✅ Open ports on ${scanResult.target}:\n`));
         (scanResult.ports || []).forEach(p => console.log(chalk.hex('#00FF40')(`  ✅ Port ${p.port}: OPEN`)));
         if (!scanResult.ports?.length) console.log(chalk.hex('#888888')('  No open ports found in scanned range'));
+        break;
+      }
+
+      // ═══ VECTOR MEMORY ═══
+      case '/vector-search': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /vector-search <query>')); break; }
+        const results = this.vectorMemory.search(args);
+        console.log(chalk.hex('#00FF40')(`✅ Found ${results.length} results:\n`));
+        results.slice(0, 10).forEach((r, i) => {
+          console.log(chalk.hex('#00FFFF')(`  ${i + 1}. [${(r.score * 100).toFixed(1)}%]`) + ` ${r.text.slice(0, 80)}`);
+        });
+        break;
+      }
+      case '/vector-add': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /vector-add <text>')); break; }
+        const addResult = this.vectorMemory.add(args);
+        console.log(chalk.hex('#00FF40')(`✅ Added to vector memory: ${addResult.id}`));
+        break;
+      }
+
+      // ═══ MODEL ROUTER ═══
+      case '/model-route': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /model-route <task description>')); break; }
+        const route = this.modelRouter.route(args);
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔀 Model Router'),
+          '',
+          chalk.hex('#00FFFF')('Task: ') + args,
+          chalk.hex('#00FFFF')('Model: ') + route.model,
+          chalk.hex('#00FFFF')('Category: ') + route.category,
+          chalk.hex('#00FFFF')('Reason: ') + route.reason,
+          chalk.hex('#00FFFF')('Confidence: ') + `${route.confidence}%`
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      // ═══ TWO-FACTOR AUTH ═══
+      case '/2fa-setup': {
+        const setupResult = this.twoFactor.setup();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔐 2FA Setup'),
+          '',
+          chalk.hex('#00FFFF')('Secret: ') + setupResult.secret,
+          chalk.hex('#00FFFF')('URI: ') + setupResult.uri.slice(0, 60) + '...',
+          '',
+          chalk.hex('#FF0000')('═══ BACKUP CODES ═══'),
+          ...setupResult.backupCodes.map(c => chalk.hex('#888888')(`  ${c}`)),
+          '',
+          chalk.hex('#FFD700')('⚠️ Save these backup codes! They won\'t be shown again.')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/2fa-verify': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /2fa-verify <code>')); break; }
+        const verifyResult = this.twoFactor.verify(args);
+        console.log(verifyResult.verified
+          ? chalk.hex('#00FF40')(`✅ Verified! Method: ${verifyResult.method}`)
+          : chalk.hex('#FF0000')(`❌ ${verifyResult.error}`));
+        break;
+      }
+
+      // ═══ SELF-UPDATER ═══
+      case '/update-check': {
+        const spin = ora('🔄 Checking for updates...').start();
+        const checkResult = this.updater.checkForUpdates();
+        spin.stop();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔄 Update Status'),
+          '',
+          chalk.hex('#00FFFF')('Current: ') + checkResult.current,
+          chalk.hex('#00FFFF')('Latest: ') + checkResult.latest,
+          chalk.hex('#00FFFF')('Available: ') + (checkResult.updateAvailable ? '✅ Yes' : '❌ No'),
+          chalk.hex('#00FFFF')('Checked: ') + checkResult.checkedAt
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+      case '/update-apply': {
+        const spin = ora('⬆️ Applying update...').start();
+        const updateResult = this.updater.applyUpdate();
+        spin.stop();
+        console.log(updateResult.applied
+          ? chalk.hex('#00FF40')(`✅ Updated ${updateResult.from} → ${updateResult.to}`)
+          : chalk.hex('#FF0000')(`❌ ${updateResult.error}`));
+        break;
+      }
+
+      // ═══ THEME ENGINE ═══
+      case '/theme-list': {
+        const themes = this.themeEngine.listThemes();
+        console.log(chalk.hex('#00FF40')('🎨 Available Themes:\n'));
+        themes.forEach(t => {
+          const marker = t.active ? chalk.hex('#FF0000')(' ← ACTIVE') : '';
+          console.log(chalk.hex('#00FFFF')(`  ${t.id}`) + chalk.hex('#888888')(` — ${t.description}`) + marker);
+        });
+        break;
+      }
+      case '/theme-create': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /theme-create <name>')); break; }
+        const createResult = this.themeEngine.createTheme(args, {});
+        console.log(createResult.created
+          ? chalk.hex('#00FF40')(`✅ Theme created: ${args}`)
+          : chalk.hex('#FF0000')(`❌ ${createResult.error}`));
+        break;
+      }
+
+      // ═══ MOBILE API ═══
+      case '/mobile-status': {
+        const mobileStatus = this.mobileAPI.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('📱 Mobile API'),
+          '',
+          chalk.hex('#00FFFF')('Running: ') + (mobileStatus.running ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('Devices: ') + mobileStatus.registeredDevices,
+          chalk.hex('#00FFFF')('Sessions: ') + mobileStatus.activeSessions,
+          chalk.hex('#00FFFF')('Push Tokens: ') + mobileStatus.pushTokens
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      // ═══ WEB UI ═══
+      case '/web-ui': {
+        try {
+          const WebUIServer = require('../web-ui/server.js');
+          const webUI = new WebUIServer(this);
+          webUI.start();
+          console.log(chalk.hex('#00FF40')('✅ Web UI started on port 3000'));
+        } catch (err) {
+          console.log(chalk.hex('#FF0000')(`❌ Failed to start Web UI: ${err.message}`));
+        }
         break;
       }
 

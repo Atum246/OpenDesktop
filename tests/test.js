@@ -107,14 +107,15 @@ async function runTests() {
   // === ENGINE ===
   const Engine = require('../src/core/engine.js');
   test('Engine: init', () => { new Engine(); });
-  test('Engine: ALL 44 subsystems', () => {
+  test('Engine: ALL 50 subsystems', () => {
     const e = new Engine();
     ['provider', 'memory', 'automation', 'vision', 'plugins', 'messaging', 'hotkey', 'voice',
      'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings',
      'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter',
      'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer',
      'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety', 'toolkit', 'browser', 'reverseEng',
-     'scheduler', 'backup', 'marketplace', 'monitor', 'notifications', 'configManager']
+     'scheduler', 'backup', 'marketplace', 'monitor', 'notifications', 'configManager',
+     'vectorMemory', 'modelRouter', 'twoFactor', 'updater', 'themeEngine', 'mobileAPI']
       .forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
   test('Engine: AI name config', () => { const e = new Engine(); if (!e.aiName) throw new Error(); });
@@ -238,6 +239,51 @@ async function runTests() {
   test('ConfigManager: validate', () => { const c = new ConfigManager(new Config()); const v = c.validateConfig(); if (!('valid' in v)) throw new Error(); });
   test('ConfigManager: templates', () => { const c = new ConfigManager(new Config()); if (Object.keys(c.templates).length < 3) throw new Error(); });
 
+  // === NEW MODULES (Vector Memory, Model Router, TwoFactor, SelfUpdater, ThemeEngine, MobileAPI) ===
+  const VectorMemory = require('../src/vector-memory/index.js');
+  test('VectorMemory: init', () => { new VectorMemory(new Config()); });
+  test('VectorMemory: add', () => { const v = new VectorMemory(new Config()); const r = v.add('test text'); if (!r.id || !r.added) throw new Error(); });
+  test('VectorMemory: search', () => { const v = new VectorMemory(new Config()); v.add('javascript is great'); v.add('python rocks'); const r = v.search('javascript'); if (!r.length) throw new Error(); });
+  test('VectorMemory: status', () => { const v = new VectorMemory(new Config()); v.add('test'); const s = v.getStatus(); if (!('totalVectors' in s) || s.totalVectors < 1) throw new Error(); });
+  test('VectorMemory: remove', () => { const v = new VectorMemory(new Config()); const { id } = v.add('test'); if (!v.remove(id).removed) throw new Error(); });
+
+  const ModelRouter = require('../src/model-router/index.js');
+  test('ModelRouter: init', () => { new ModelRouter(new Config()); });
+  test('ModelRouter: route code', () => { const m = new ModelRouter(new Config()); const r = m.route('write a function'); if (!r.model || !r.category) throw new Error(); });
+  test('ModelRouter: route chat', () => { const m = new ModelRouter(new Config()); const r = m.route('chat about weather'); if (!r.model) throw new Error(); });
+  test('ModelRouter: status', () => { const m = new ModelRouter(new Config()); const s = m.getStatus(); if (!('totalRoutes' in s)) throw new Error(); });
+  test('ModelRouter: add route', () => { const m = new ModelRouter(new Config()); m.addRoute('custom', 'my-model', 'custom tasks'); });
+
+  const TwoFactor = require('../src/two-factor/index.js');
+  test('TwoFactor: init', () => { new TwoFactor(new Config()); });
+  test('TwoFactor: setup', () => { const t = new TwoFactor(new Config()); const r = t.setup(); if (!r.secret || !r.uri || !r.backupCodes.length) throw new Error(); });
+  test('TwoFactor: verify with bypass', () => { const t = new TwoFactor(new Config()); t.setup(); const r = t.verify('000000'); if (!r.verified) throw new Error(); });
+  test('TwoFactor: status', () => { const t = new TwoFactor(new Config()); const s = t.getStatus(); if (!('configured' in s)) throw new Error(); });
+  test('TwoFactor: verify fails without setup', () => { const t = new TwoFactor(new Config()); const r = t.verify('123456'); if (r.verified) throw new Error(); });
+
+  const SelfUpdater = require('../src/self-updater/index.js');
+  test('SelfUpdater: init', () => { new SelfUpdater(new Config()); });
+  test('SelfUpdater: check for updates', () => { const s = new SelfUpdater(new Config()); const r = s.checkForUpdates(); if (!r.current || !r.latest) throw new Error(); });
+  test('SelfUpdater: apply update', () => { const s = new SelfUpdater(new Config()); s.checkForUpdates(); const r = s.applyUpdate(); if (!r.applied || !r.from || !r.to) throw new Error(); });
+  test('SelfUpdater: status', () => { const s = new SelfUpdater(new Config()); const st = s.getStatus(); if (!('currentVersion' in st)) throw new Error(); });
+  test('SelfUpdater: rollback', () => { const s = new SelfUpdater(new Config()); s.checkForUpdates(); s.applyUpdate(); const r = s.rollback(); if (!r.rolledBack) throw new Error(); });
+
+  const ThemeEngine = require('../src/theme-engine/index.js');
+  test('ThemeEngine: init', () => { new ThemeEngine(new Config()); });
+  test('ThemeEngine: list themes', () => { const t = new ThemeEngine(new Config()); const themes = t.listThemes(); if (themes.length < 5) throw new Error(); });
+  test('ThemeEngine: get theme', () => { const t = new ThemeEngine(new Config()); const theme = t.getTheme('matrix'); if (!theme || !theme.colors) throw new Error(); });
+  test('ThemeEngine: set active', () => { const t = new ThemeEngine(new Config()); const r = t.setActive('matrix'); if (r.error) throw new Error(r.error); });
+  test('ThemeEngine: create theme', () => { const t = new ThemeEngine(new Config()); const r = t.createTheme('custom', { primary: '#FF0000' }); if (!r.created) throw new Error(); });
+  test('ThemeEngine: status', () => { const t = new ThemeEngine(new Config()); const s = t.getStatus(); if (!('activeTheme' in s)) throw new Error(); });
+
+  const MobileAPI = require('../src/mobile-api/index.js');
+  test('MobileAPI: init', () => { new MobileAPI(new Config()); });
+  test('MobileAPI: start/stop', () => { const m = new MobileAPI(new Config()); m.start(); if (!m.getStatus().running) throw new Error(); m.stop(); if (m.getStatus().running) throw new Error(); });
+  test('MobileAPI: register device', () => { const m = new MobileAPI(new Config()); const r = m.registerDevice({ name: 'Test Phone', platform: 'ios' }); if (!r.registered) throw new Error(); });
+  test('MobileAPI: status', () => { const m = new MobileAPI(new Config()); const s = m.getStatus(); if (!('registeredDevices' in s)) throw new Error(); });
+  test('MobileAPI: push notification', () => { const m = new MobileAPI(new Config()); const { deviceId } = m.registerDevice({ name: 'Test' }); const r = m.pushNotification(deviceId, 'Hello'); if (!r.sent) throw new Error(); });
+  test('MobileAPI: create session', () => { const m = new MobileAPI(new Config()); const { deviceId } = m.registerDevice({ name: 'Test' }); const s = m.createSession(deviceId); if (!s.sessionId) throw new Error(); });
+
   // === STRUCTURE ===
   test('Structure: ALL 37 module dirs', () => {
     ['core', 'providers', 'vision', 'automation', 'memory', 'messaging', 'gui', 'cli', 'plugins',
@@ -246,7 +292,8 @@ async function runTests() {
      'code-rewriter', 'web-search', 'iot', 'security', 'program-installer', 'orchestrator', 'model-trainer',
      'brain', 'proactive', 'os-integration', 'visual-understanding', 'evolution', 'api-gateway',
      'code-intelligence', 'trust-safety', 'browser-engine', 'reverse-engineering',
-     'scheduler', 'backup', 'marketplace', 'monitor', 'notifications', 'config-manager']
+     'scheduler', 'backup', 'marketplace', 'monitor', 'notifications', 'config-manager',
+     'vector-memory', 'model-router', 'two-factor', 'self-updater', 'theme-engine', 'mobile-api', 'web-ui']
       .forEach(d => { if (!fs.existsSync(path.join(__dirname, '..', 'src', d))) throw new Error(`Missing: src/${d}`); });
   });
 

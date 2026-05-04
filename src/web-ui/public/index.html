@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenDesktop // COMMAND CENTER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="matrix-canvas"></canvas>
+  <div class="scanline-overlay"></div>
+  <div class="crt-overlay"></div>
+
+  <div class="app-layout">
+    <!-- ── Sidebar ─────────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <pre class="ascii-logo" aria-hidden="true">
+ ██████╗ ██████╗
+██╔═══██╗██╔══██╗
+██║   ██║██║  ██║
+██║   ██║██║  ██║
+╚██████╔╝██████╔╝
+ ╚═════╝ ╚═════╝
+DESKTOP</pre>
+        <div class="glitch-line"></div>
+      </div>
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-tab="chat"><span class="nav-icon">▶</span><span class="nav-label">CHAT</span><span class="nav-status online"></span></a>
+        <a href="#" class="nav-item" data-tab="system"><span class="nav-icon">◆</span><span class="nav-label">SYSTEM</span><span class="nav-status online"></span></a>
+        <a href="#" class="nav-item" data-tab="agents"><span class="nav-icon">◎</span><span class="nav-label">AGENTS</span><span class="nav-status idle"></span></a>
+        <a href="#" class="nav-item" data-tab="code"><span class="nav-icon">⌘</span><span class="nav-label">CODE</span><span class="nav-status offline"></span></a>
+        <a href="#" class="nav-item" data-tab="memory"><span class="nav-icon">◈</span><span class="nav-label">MEMORY</span><span class="nav-status online"></span></a>
+        <a href="#" class="nav-item" data-tab="iot"><span class="nav-icon">⚡</span><span class="nav-label">IoT</span><span class="nav-status idle"></span></a>
+        <a href="#" class="nav-item" data-tab="security"><span class="nav-icon">⛊</span><span class="nav-label">SECURITY</span><span class="nav-status online"></span></a>
+        <a href="#" class="nav-item" data-tab="settings"><span class="nav-icon">⚙</span><span class="nav-label">SETTINGS</span><span class="nav-status offline"></span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="connection-indicator"><span class="pulse-dot"></span><span id="ws-status">CONNECTING...</span></div>
+        <div class="session-info"><span class="session-label">SESSION:</span><span class="session-id" id="session-id">------</span></div>
+      </div>
+    </aside>
+
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+
+    <!-- ── Main Content ────────────────────────────────────── -->
+    <main class="main-content">
+      <header class="top-bar">
+        <div class="top-bar-left">
+          <h1 class="glitch-text" data-text="COMMAND CENTER">COMMAND CENTER</h1>
+          <span class="top-bar-subtitle">opendesktop v2.4.1 // kernel <span id="kernel-ver">loading...</span></span>
+        </div>
+        <div class="top-bar-right">
+          <div class="stat-chip"><span class="stat-label">CPU</span><span class="stat-value" id="top-cpu">--%</span></div>
+          <div class="stat-chip"><span class="stat-label">RAM</span><span class="stat-value" id="top-ram">--%</span></div>
+          <div class="stat-chip"><span class="stat-label">DISK</span><span class="stat-value" id="top-disk">--%</span></div>
+          <div class="clock" id="clock">00:00:00</div>
+        </div>
+      </header>
+
+      <div class="tab-content">
+        <!-- Chat -->
+        <section class="tab-panel active" id="panel-chat">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="SECURE CHANNEL">SECURE CHANNEL</h2><span class="panel-badge">E2E</span></div>
+          <div class="chat-window" id="chat-window">
+            <div class="chat-messages" id="chat-messages">
+              <div class="msg-system"><span class="msg-prefix">[SYS]</span><span class="msg-time">00:00:00</span><span class="msg-body">Secure channel initialized. All transmissions encrypted.</span></div>
+            </div>
+            <div class="chat-input-area">
+              <div class="input-prompt"><span class="prompt-user">root@opendesktop</span><span class="prompt-sep">:</span><span class="prompt-path">~</span><span class="prompt-symbol">$</span></div>
+              <input type="text" id="chat-input" class="terminal-input" placeholder="Enter command..." autocomplete="off" spellcheck="false">
+              <button class="send-btn" id="send-btn" title="Send">▶</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- System -->
+        <section class="tab-panel" id="panel-system">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="SYSTEM MONITOR">SYSTEM MONITOR</h2></div>
+          <div class="system-grid">
+            <div class="sys-card"><div class="sys-card-header"><span class="sys-icon">◆</span><span>CPU USAGE</span></div><div class="sys-bar-container"><div class="sys-bar cpu-bar" id="cpu-bar"><span id="cpu-pct">0%</span></div></div><div class="sys-detail" id="cpu-detail">-- cores | load: --</div></div>
+            <div class="sys-card"><div class="sys-card-header"><span class="sys-icon">◈</span><span>MEMORY</span></div><div class="sys-bar-container"><div class="sys-bar ram-bar" id="ram-bar"><span id="ram-pct">0%</span></div></div><div class="sys-detail" id="ram-detail">-- / -- GB</div></div>
+            <div class="sys-card"><div class="sys-card-header"><span class="sys-icon">◎</span><span>DISK</span></div><div class="sys-bar-container"><div class="sys-bar disk-bar" id="disk-bar"><span id="disk-pct">0%</span></div></div><div class="sys-detail" id="disk-detail">-- / -- GB</div></div>
+            <div class="sys-card wide"><div class="sys-card-header"><span class="sys-icon">⚡</span><span>SYSTEM INFO</span></div><pre class="sys-info-block" id="sys-info">Loading...</pre></div>
+            <div class="sys-card wide"><div class="sys-card-header"><span class="sys-icon">▶</span><span>TOP PROCESSES</span></div><pre class="sys-info-block" id="proc-info">Loading...</pre></div>
+          </div>
+        </section>
+
+        <!-- Agents -->
+        <section class="tab-panel" id="panel-agents">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="AGENT CONTROL">AGENT CONTROL</h2></div>
+          <div class="agent-grid">
+            <div class="agent-card"><div class="agent-avatar">N</div><div class="agent-info"><div class="agent-name">NEO</div><div class="agent-role">Primary Agent</div><div class="agent-status-text online">● ACTIVE</div></div></div>
+            <div class="agent-card"><div class="agent-avatar">S</div><div class="agent-info"><div class="agent-name">SENTINEL</div><div class="agent-role">Security Monitor</div><div class="agent-status-text idle">◐ IDLE</div></div></div>
+            <div class="agent-card"><div class="agent-avatar">W</div><div class="agent-info"><div class="agent-name">WEAVER</div><div class="agent-role">Code Architect</div><div class="agent-status-text offline">○ OFFLINE</div></div></div>
+            <div class="agent-card"><div class="agent-avatar">O</div><div class="agent-info"><div class="agent-name">ORACLE</div><div class="agent-role">Data Analyst</div><div class="agent-status-text idle">◐ IDLE</div></div></div>
+          </div>
+        </section>
+
+        <!-- Code -->
+        <section class="tab-panel" id="panel-code">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="CODE EDITOR">CODE EDITOR</h2></div>
+          <div class="code-editor">
+            <div class="code-toolbar"><span class="code-tab active">main.py</span><span class="code-tab">utils.js</span><span class="code-tab">config.yaml</span></div>
+            <pre class="code-block" id="code-block"><code><span class="code-ln">  1</span> <span class="kw">import</span> asyncio
+<span class="code-ln">  2</span> <span class="kw">from</span> opendesktop <span class="kw">import</span> Agent, Core
+<span class="code-ln">  3</span>
+<span class="code-ln">  4</span> <span class="kw">async def</span> <span class="fn">main</span>():
+<span class="code-ln">  5</span>     agent = Agent(<span class="str">"neo"</span>)
+<span class="code-ln">  6</span>     core = Core()
+<span class="code-ln">  7</span>
+<span class="code-ln">  8</span>     <span class="kw">await</span> agent.initialize()
+<span class="code-ln">  9</span>     <span class="kw">await</span> core.connect()
+<span class="code-ln"> 10</span>
+<span class="code-ln"> 11</span>     <span class="cmt"># Main loop</span>
+<span class="code-ln"> 12</span>     <span class="kw">while</span> <span class="bool">True</span>:
+<span class="code-ln"> 13</span>         task = <span class="kw">await</span> core.next_task()
+<span class="code-ln"> 14</span>         result = <span class="kw">await</span> agent.execute(task)
+<span class="code-ln"> 15</span>         <span class="kw">await</span> core.report(result)
+<span class="code-ln"> 16</span>
+<span class="code-ln"> 17</span> <span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+<span class="code-ln"> 18</span>     asyncio.run(main())</code></pre>
+          </div>
+        </section>
+
+        <!-- Memory -->
+        <section class="tab-panel" id="panel-memory">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="MEMORY BANK">MEMORY BANK</h2></div>
+          <div class="memory-grid">
+            <div class="mem-card"><div class="mem-title">📝 Daily Notes</div><div class="mem-preview">2026-05-05: Built hacker UI for OpenDesktop...</div><div class="mem-meta">Last modified: 06:42</div></div>
+            <div class="mem-card"><div class="mem-title">🧠 Long-term Memory</div><div class="mem-preview">Core preferences, user context, learned patterns...</div><div class="mem-meta">47 entries</div></div>
+            <div class="mem-card"><div class="mem-title">📋 Project State</div><div class="mem-preview">OpenDesktop web-ui: in progress...</div><div class="mem-meta">Active</div></div>
+            <div class="mem-card"><div class="mem-title">🔗 Linked Context</div><div class="mem-preview">AGENTS.md, SOUL.md, USER.md, TOOLS.md</div><div class="mem-meta">4 files linked</div></div>
+          </div>
+        </section>
+
+        <!-- IoT -->
+        <section class="tab-panel" id="panel-iot">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="IoT CONTROL">IoT CONTROL</h2></div>
+          <div class="iot-grid">
+            <div class="iot-card"><div class="iot-icon">💡</div><div class="iot-name">Living Room</div><div class="iot-status on">ON</div><div class="iot-slider"><input type="range" min="0" max="100" value="80"></div></div>
+            <div class="iot-card"><div class="iot-icon">🌡️</div><div class="iot-name">Thermostat</div><div class="iot-value">23°C</div><div class="iot-slider"><input type="range" min="16" max="30" value="23"></div></div>
+            <div class="iot-card"><div class="iot-icon">🔒</div><div class="iot-name">Front Door</div><div class="iot-status locked">LOCKED</div></div>
+            <div class="iot-card"><div class="iot-icon">📷</div><div class="iot-name">Security Cam</div><div class="iot-status on">RECORDING</div></div>
+          </div>
+        </section>
+
+        <!-- Security -->
+        <section class="tab-panel" id="panel-security">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="SECURITY OPS">SECURITY OPS</h2><span class="panel-badge alert">MONITORING</span></div>
+          <div class="security-grid">
+            <div class="sec-card"><div class="sec-title">🛡️ Firewall</div><div class="sec-status active">ACTIVE</div><div class="sec-detail">0 threats blocked today</div></div>
+            <div class="sec-card"><div class="sec-title">🔐 SSH Access</div><div class="sec-status active">HARDENED</div><div class="sec-detail">Key-only auth | Port 22</div></div>
+            <div class="sec-card"><div class="sec-title">📡 Network</div><div class="sec-status active">MONITORED</div><div class="sec-detail">All interfaces scanned</div></div>
+            <div class="sec-card wide"><div class="sec-title">📋 Audit Log</div><pre class="sec-log" id="sec-log">[06:42:01] AUTH  login success  user=root  src=127.0.0.1
+[06:42:01] NET   ws connected    id=a3f8
+[06:42:03] SYS   stats polling   interval=2s
+[06:45:12] AUTH  session active  uptime=3m</pre></div>
+          </div>
+        </section>
+
+        <!-- Settings -->
+        <section class="tab-panel" id="panel-settings">
+          <div class="panel-header"><h2 class="glitch-text-sm" data-text="CONFIGURATION">CONFIGURATION</h2></div>
+          <div class="settings-grid">
+            <div class="setting-group">
+              <h3 class="setting-title">Display</h3>
+              <label class="setting-row"><span>Matrix Rain</span><input type="checkbox" id="toggle-matrix" checked></label>
+              <label class="setting-row"><span>Scanline Effect</span><input type="checkbox" id="toggle-scanline" checked></label>
+              <label class="setting-row"><span>Glitch Effects</span><input type="checkbox" id="toggle-glitch" checked></label>
+              <label class="setting-row"><span>CRT Flicker</span><input type="checkbox" id="toggle-crt" checked></label>
+            </div>
+            <div class="setting-group">
+              <h3 class="setting-title">Theme Color</h3>
+              <div class="color-options">
+                <button class="color-btn active" data-color="green" style="background:#00ff41"></button>
+                <button class="color-btn" data-color="cyan" style="background:#00ffff"></button>
+                <button class="color-btn" data-color="red" style="background:#ff0040"></button>
+                <button class="color-btn" data-color="amber" style="background:#ffaa00"></button>
+              </div>
+            </div>
+            <div class="setting-group">
+              <h3 class="setting-title">Connection</h3>
+              <div class="setting-row"><span>WebSocket</span><span class="setting-status" id="ws-setting-status">● Connected</span></div>
+              <div class="setting-row"><span>Stats Interval</span><span>2000ms</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+  <script src="app.js"></script>
+</body>
+</html>
