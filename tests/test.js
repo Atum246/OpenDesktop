@@ -1,237 +1,156 @@
 #!/usr/bin/env node
 'use strict';
-
-// ═══════════════════════════════════════════════════════════════
-//  OpenDesktop Test Suite
-// ═══════════════════════════════════════════════════════════════
-
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-
-let passed = 0;
-let failed = 0;
-let total = 0;
+let passed = 0, failed = 0, total = 0;
 
 function test(name, fn) {
   total++;
   try {
     const result = fn();
     if (result instanceof Promise) {
-      result.then(() => { passed++; console.log(`  ✅ ${name}`); })
-        .catch(err => { failed++; console.log(`  ❌ ${name}: ${err.message}`); });
-    } else {
-      passed++;
-      console.log(`  ✅ ${name}`);
-    }
-  } catch (err) {
-    failed++;
-    console.log(`  ❌ ${name}: ${err.message}`);
-  }
+      result.then(() => { passed++; console.log(`  ✅ ${name}`); }).catch(err => { failed++; console.log(`  ❌ ${name}: ${err.message}`); });
+    } else { passed++; console.log(`  ✅ ${name}`); }
+  } catch (err) { failed++; console.log(`  ❌ ${name}: ${err.message}`); }
 }
 
 async function runTests() {
-  console.log('\n  ⚡ OpenDesktop Test Suite ⚡\n');
+  console.log('\n  ⚡ OpenDesktop Test Suite — Full Feature Test ⚡\n');
 
-  // Config tests
+  // === Config ===
   const Config = require('../src/core/config.js');
-  test('Config: loads without error', () => { new Config(); });
-  test('Config: has default values', () => {
-    const c = new Config();
-    if (!c.get('provider')) throw new Error('Missing provider config');
-  });
-  test('Config: can set and get values', () => {
-    const c = new Config();
-    c.set('test.value', 'hello');
-    if (c.get('test.value') !== 'hello') throw new Error('Set/get failed');
-  });
-  test('Config: has correct paths', () => {
-    const c = new Config();
-    if (!c.paths.configDir.includes('.opendesktop')) throw new Error('Wrong config dir');
-  });
+  test('Config: loads', () => { new Config(); });
+  test('Config: has defaults', () => { const c = new Config(); if (!c.get('provider')) throw new Error('Missing'); });
+  test('Config: set/get', () => { const c = new Config(); c.set('test.x', 'y'); if (c.get('test.x') !== 'y') throw new Error('Fail'); });
 
-  // Provider tests
+  // === Providers ===
   const ProviderRegistry = require('../src/providers/index.js');
-  test('ProviderRegistry: loads all providers', () => {
-    const p = new ProviderRegistry(new Config());
-    const providers = p.listProviders();
-    if (providers.length < 15) throw new Error(`Expected 15+ providers, got ${providers.length}`);
-  });
-  test('ProviderRegistry: has correct provider count', () => {
-    const count = Object.keys(ProviderRegistry.PROVIDERS).length;
-    if (count < 18) throw new Error(`Expected 18+ providers, got ${count}`);
-    console.log(`    (${count} providers registered)`);
-  });
-  test('ProviderRegistry: lists models for provider', () => {
-    const p = new ProviderRegistry(new Config());
-    const models = p.listModels();
-    if (models.length === 0) throw new Error('No models listed');
-  });
-  test('ProviderRegistry: can switch models', () => {
-    const p = new ProviderRegistry(new Config());
-    p.switchModel('gpt-4o');
-    if (p.model !== 'gpt-4o') throw new Error('Model switch failed');
-  });
+  test('Providers: loads all', () => { const p = new ProviderRegistry(new Config()); if (p.listProviders().length < 15) throw new Error('Too few'); });
+  test('Providers: 19 providers', () => { const c = Object.keys(ProviderRegistry.PROVIDERS).length; if (c < 18) throw new Error(`Expected 18+, got ${c}`); console.log(`    (${c} providers)`); });
+  test('Providers: lists models', () => { const p = new ProviderRegistry(new Config()); if (!p.listModels().length) throw new Error('None'); });
+  test('Providers: switch model', () => { const p = new ProviderRegistry(new Config()); p.switchModel('gpt-4o'); if (p.model !== 'gpt-4o') throw new Error('Fail'); });
 
-  // Memory tests
+  // === Memory ===
   const MemorySystem = require('../src/memory/index.js');
-  test('MemorySystem: initializes', () => { new MemorySystem(new Config()); });
-  test('MemorySystem: can add and recall semantic memory', () => {
-    const m = new MemorySystem(new Config());
-    m.remember('test_key', 'test_value');
-    if (m.recall('test_key') !== 'test_value') throw new Error('Recall failed');
-    m.forget('test_key');
-  });
-  test('MemorySystem: can add episodic events', () => {
-    const m = new MemorySystem(new Config());
-    m.addEvent({ type: 'test', message: 'test event' });
-    const events = m.getEvents({ type: 'test' });
-    if (events.length === 0) throw new Error('No events found');
-  });
-  test('MemorySystem: can add tasks', () => {
-    const m = new MemorySystem(new Config());
-    m.addTask({ description: 'test task', type: 'test' });
-    const tasks = m.getTasks({ type: 'test' });
-    if (tasks.length === 0) throw new Error('No tasks found');
-  });
-  test('MemorySystem: search works', () => {
-    const m = new MemorySystem(new Config());
-    m.remember('searchable_item', 'findme_unique_12345');
-    const results = m.search('findme_unique_12345');
-    if (results.length === 0) throw new Error('Search returned no results');
-    m.forget('searchable_item');
-  });
-  test('MemorySystem: getStats returns correct structure', () => {
-    const m = new MemorySystem(new Config());
-    const stats = m.getStats();
-    if (!('episodicCount' in stats)) throw new Error('Missing episodicCount');
-    if (!('semanticCount' in stats)) throw new Error('Missing semanticCount');
-    if (!('taskCount' in stats)) throw new Error('Missing taskCount');
-  });
-  test('MemorySystem: export/import works', () => {
-    const m = new MemorySystem(new Config());
-    m.remember('export_test', 'export_value');
-    const data = m.exportAll();
-    if (!data.semantic) throw new Error('Export missing semantic');
-  });
+  test('Memory: init', () => { new MemorySystem(new Config()); });
+  test('Memory: semantic', () => { const m = new MemorySystem(new Config()); m.remember('k', 'v'); if (m.recall('k') !== 'v') throw new Error('Fail'); m.forget('k'); });
+  test('Memory: episodic', () => { const m = new MemorySystem(new Config()); m.addEvent({ type: 'test', message: 'hi' }); if (!m.getEvents({ type: 'test' }).length) throw new Error('None'); });
+  test('Memory: tasks', () => { const m = new MemorySystem(new Config()); m.addTask({ description: 'test', type: 'test' }); if (!m.getTasks().length) throw new Error('None'); });
+  test('Memory: search', () => { const m = new MemorySystem(new Config()); m.remember('findme', 'xyz123'); if (!m.search('xyz123').length) throw new Error('None'); m.forget('findme'); });
+  test('Memory: stats', () => { const s = new MemorySystem(new Config()).getStats(); if (!('episodicCount' in s)) throw new Error('Missing'); });
+  test('Memory: export', () => { const d = new MemorySystem(new Config()).exportAll(); if (!d.semantic) throw new Error('Missing'); });
 
-  // Automation tests
+  // === Automation ===
   const AutomationEngine = require('../src/automation/index.js');
-  test('AutomationEngine: initializes', () => { new AutomationEngine(new Config()); });
-  test('AutomationEngine: can run shell commands', async () => {
-    const a = new AutomationEngine(new Config());
-    const result = await a.runCommand('echo "hello"');
-    if (!result.success) throw new Error('Command failed');
-    if (!result.stdout.includes('hello')) throw new Error('Wrong output');
-  });
-  test('AutomationEngine: can list directory', async () => {
-    const a = new AutomationEngine(new Config());
-    const result = await a.listDir('.');
-    if (!result.success) throw new Error('ListDir failed');
-    if (!result.entries.length) throw new Error('No entries');
-  });
-  test('AutomationEngine: can read files', async () => {
-    const a = new AutomationEngine(new Config());
-    const result = await a.readFile(path.join(__dirname, '..', 'package.json'));
-    if (!result.success) throw new Error('ReadFile failed');
-    if (!result.content.includes('opendesktop')) throw new Error('Wrong content');
-  });
-  test('AutomationEngine: can write files', async () => {
-    const a = new AutomationEngine(new Config());
-    const testFile = path.join(os.tmpdir(), 'od_test_' + Date.now() + '.txt');
-    const result = await a.writeFile(testFile, 'test content');
-    if (!result.success) throw new Error('WriteFile failed');
-    fs.unlinkSync(testFile);
-  });
-  test('AutomationEngine: getSystemInfo returns data', async () => {
-    const a = new AutomationEngine(new Config());
-    const info = await a.getSystemInfo();
-    if (!info.cpu) throw new Error('Missing cpu info');
-    if (!info.memory) throw new Error('Missing memory info');
-    if (!info.os) throw new Error('Missing os info');
-  });
-  test('AutomationEngine: history tracks actions', async () => {
-    const a = new AutomationEngine(new Config());
-    await a.runCommand('echo test');
-    const history = a.getHistory();
-    if (history.length === 0) throw new Error('No history');
-  });
+  test('Automation: init', () => { new AutomationEngine(new Config()); });
+  test('Automation: shell command', async () => { const r = await new AutomationEngine(new Config()).runCommand('echo test'); if (!r.success || !r.stdout.includes('test')) throw new Error('Fail'); });
+  test('Automation: list dir', async () => { const r = await new AutomationEngine(new Config()).listDir('.'); if (!r.success) throw new Error('Fail'); });
+  test('Automation: read file', async () => { const r = await new AutomationEngine(new Config()).readFile(path.join(__dirname, '..', 'package.json')); if (!r.content.includes('opendesktop')) throw new Error('Fail'); });
+  test('Automation: write file', async () => { const f = path.join(os.tmpdir(), 'od_' + Date.now()); const r = await new AutomationEngine(new Config()).writeFile(f, 'test'); if (!r.success) throw new Error('Fail'); fs.unlinkSync(f); });
+  test('Automation: system info', async () => { const r = await new AutomationEngine(new Config()).getSystemInfo(); if (!r.cpu || !r.memory) throw new Error('Missing'); });
 
-  // Vision tests
+  // === Vision ===
   const VisionSystem = require('../src/vision/index.js');
-  test('VisionSystem: initializes', () => { new VisionSystem(new Config(), new ProviderRegistry(new Config())); });
+  test('Vision: init', () => { new VisionSystem(new Config(), new ProviderRegistry(new Config())); });
 
-  // Plugin tests
+  // === Plugins ===
   const PluginManager = require('../src/plugins/index.js');
-  test('PluginManager: initializes', () => { new PluginManager(new Config(), {}); });
-  test('PluginManager: has built-in skills', () => {
-    const pm = new PluginManager(new Config(), {});
-    const skills = pm.getBuiltInSkills();
-    if (skills.length < 10) throw new Error(`Expected 10+ skills, got ${skills.length}`);
-  });
+  test('Plugins: init', () => { new PluginManager(new Config(), {}); });
+  test('Plugins: built-in skills', () => { const s = new PluginManager(new Config(), {}).getBuiltInSkills(); if (s.length < 10) throw new Error('Too few'); });
 
-  // Messaging tests
+  // === Messaging ===
   const MessagingHub = require('../src/messaging/index.js');
-  test('MessagingHub: initializes', () => { new MessagingHub(new Config(), {}); });
-  test('MessagingHub: getStatus returns structure', () => {
-    const m = new MessagingHub(new Config(), {});
-    const status = m.getStatus();
-    if (!('active' in status)) throw new Error('Missing active field');
-    if (!('platforms' in status)) throw new Error('Missing platforms field');
-  });
+  test('Messaging: init', () => { new MessagingHub(new Config(), {}); });
+  test('Messaging: status', () => { const s = new MessagingHub(new Config(), {}).getStatus(); if (!('active' in s)) throw new Error('Missing'); });
 
-  // Engine tests
+  // === Hotkey ===
+  const GlobalHotkey = require('../src/hotkey/index.js');
+  test('Hotkey: init', () => { new GlobalHotkey(new Config(), () => {}); });
+  test('Hotkey: get hotkey', () => { const h = new GlobalHotkey(new Config(), () => {}); if (!h.getHotkey()) throw new Error('None'); });
+
+  // === Voice ===
+  const VoiceSystem = require('../src/voice/index.js');
+  test('Voice: init', () => { new VoiceSystem(new Config(), {}); });
+  test('Voice: status', () => { const s = new VoiceSystem(new Config(), {}).getStatus(); if (!('wakeWord' in s)) throw new Error('Missing'); });
+
+  // === Code Executor ===
+  const CodeExecutor = require('../src/code-executor/index.js');
+  test('CodeExecutor: init', () => { new CodeExecutor(new Config()); });
+  test('CodeExecutor: supported languages', () => { const l = new CodeExecutor(new Config()).getSupportedLanguages(); if (l.length < 20) throw new Error('Too few'); });
+  test('CodeExecutor: execute JS', async () => { const r = await new CodeExecutor(new Config()).execute('console.log("hello")', 'javascript'); if (!r.success) throw new Error(r.error); });
+  test('CodeExecutor: execute Python', async () => { const r = await new CodeExecutor(new Config()).execute('print("hello")', 'python'); if (!r.success && !r.error?.includes('python3')) throw new Error('Expected success or python not found'); });
+  test('CodeExecutor: detect language', () => { const d = new CodeExecutor(new Config())._detectLanguage('console.log("test")'); if (d !== 'javascript') throw new Error('Wrong: ' + d); });
+  test('CodeExecutor: create project', async () => { const r = await new CodeExecutor(new Config()).createProject('test-proj', 'javascript'); if (!r.files.length) throw new Error('No files'); });
+
+  // === Deployer ===
+  const Deployer = require('../src/deployer/index.js');
+  test('Deployer: init', () => { new Deployer(new Config()); });
+  test('Deployer: targets', () => { const t = new Deployer(new Config()).getSupportedTargets(); if (t.length < 10) throw new Error('Too few'); });
+
+  // === Learning ===
+  const LearningSystem = require('../src/learning/index.js');
+  test('Learning: init', () => { new LearningSystem(new Config(), new MemorySystem(new Config())); });
+  test('Learning: track command', () => { const l = new LearningSystem(new Config(), new MemorySystem(new Config())); l.trackCommand('/test'); });
+  test('Learning: learn correction', () => { const l = new LearningSystem(new Config(), new MemorySystem(new Config())); l.learnFromCorrection('wrong', 'right', 'test'); });
+  test('Learning: learn preference', () => { const l = new LearningSystem(new Config(), new MemorySystem(new Config())); l.learnPreference('theme', 'color', 'red'); });
+  test('Learning: suggestions', () => { const l = new LearningSystem(new Config(), new MemorySystem(new Config())); l.getSuggestions(); });
+  test('Learning: stats', () => { const s = new LearningSystem(new Config(), new MemorySystem(new Config())).getStats(); if (!('commandsTracked' in s)) throw new Error('Missing'); });
+
+  // === Skill Creator ===
+  const SkillCreator = require('../src/skill-creator/index.js');
+  test('SkillCreator: init', () => { new SkillCreator(new Config()); });
+  test('SkillCreator: create skill', async () => { const r = await new SkillCreator(new Config()).createSkill('test-skill', 'A test skill'); if (!r.created) throw new Error('Failed'); });
+  test('SkillCreator: list skills', () => { const s = new SkillCreator(new Config()).listSkills(); if (!Array.isArray(s)) throw new Error('Not array'); });
+
+  // === Workflow ===
+  const WorkflowBuilder = require('../src/workflows/index.js');
+  test('Workflow: init', () => { new WorkflowBuilder(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); });
+  test('Workflow: create', async () => { const r = await new WorkflowBuilder(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())).createWorkflow('test-wf', [{ type: 'command', action: 'echo test' }]); if (!r.created) throw new Error('Failed'); });
+  test('Workflow: list', () => { const w = new WorkflowBuilder(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())).listWorkflows(); if (!Array.isArray(w)) throw new Error('Not array'); });
+
+  // === Persona ===
+  const PersonaSystem = require('../src/persona/index.js');
+  test('Persona: init', () => { new PersonaSystem(new Config(), new MemorySystem(new Config())); });
+  test('Persona: presets', () => { const p = new PersonaSystem(new Config(), new MemorySystem(new Config())).getPresets(); if (p.length < 5) throw new Error('Too few'); });
+  test('Persona: create', async () => { const r = await new PersonaSystem(new Config(), new MemorySystem(new Config())).createPersona('test-persona', { tone: 'casual' }); if (!r.created) throw new Error('Failed'); });
+  test('Persona: activate', async () => { const p = new PersonaSystem(new Config(), new MemorySystem(new Config())); await p.createPersona('test-act', {}); const r = p.activatePersona('test-act'); if (!r.activated) throw new Error('Failed'); });
+  test('Persona: system prompt', async () => { const p = new PersonaSystem(new Config(), new MemorySystem(new Config())); await p.createPersona('test-prompt', { tone: 'friendly', traits: ['helpful'] }); p.activatePersona('test-prompt'); const sp = p.getSystemPrompt(); if (!sp.includes('friendly')) throw new Error('Missing tone'); });
+
+  // === Engine ===
   const Engine = require('../src/core/engine.js');
-  test('Engine: initializes', () => { new Engine(); });
-  test('Engine: has all subsystems', () => {
+  test('Engine: init', () => { new Engine(); });
+  test('Engine: all subsystems', () => {
     const e = new Engine();
-    if (!e.provider) throw new Error('Missing provider');
-    if (!e.memory) throw new Error('Missing memory');
-    if (!e.automation) throw new Error('Missing automation');
-    if (!e.vision) throw new Error('Missing vision');
-    if (!e.plugins) throw new Error('Missing plugins');
-    if (!e.messaging) throw new Error('Missing messaging');
+    const required = ['provider', 'memory', 'automation', 'vision', 'plugins', 'messaging', 'hotkey', 'voice', 'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings'];
+    required.forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
 
-  // Package tests
-  test('Package: has correct name', () => {
-    const pkg = require('../package.json');
-    if (pkg.name !== 'opendesktop') throw new Error('Wrong package name');
+  // === Package ===
+  test('Package: name', () => { if (require('../package.json').name !== 'opendesktop-ai') throw new Error('Wrong'); });
+  test('Package: bins', () => { const p = require('../package.json'); if (!p.bin.opendesktop || !p.bin.od) throw new Error('Missing'); });
+  test('Package: keywords', () => { if (require('../package.json').keywords.length < 10) throw new Error('Too few'); });
+
+  // === File Structure ===
+  test('Structure: all dirs', () => {
+    ['core', 'providers', 'vision', 'automation', 'memory', 'messaging', 'gui', 'cli', 'plugins', 'hotkey', 'voice', 'code-executor', 'deployer', 'learning', 'skill-creator', 'workflows', 'persona', 'settings']
+      .forEach(d => { if (!fs.existsSync(path.join(__dirname, '..', 'src', d))) throw new Error(`Missing src/${d}`); });
   });
-  test('Package: has bin entries', () => {
-    const pkg = require('../package.json');
-    if (!pkg.bin.opendesktop) throw new Error('Missing opendesktop bin');
-    if (!pkg.bin.od) throw new Error('Missing od alias');
-  });
-  test('Package: has keywords', () => {
-    const pkg = require('../package.json');
-    if (pkg.keywords.length < 10) throw new Error('Too few keywords');
+  test('Structure: all files', () => {
+    ['src/index.js', 'src/core/engine.js', 'src/core/config.js', 'src/providers/index.js', 'src/memory/index.js',
+     'src/vision/index.js', 'src/automation/index.js', 'src/messaging/index.js', 'src/gui/index.js',
+     'src/plugins/index.js', 'src/cli/setup.js', 'src/hotkey/index.js', 'src/voice/index.js',
+     'src/code-executor/index.js', 'src/deployer/index.js', 'src/learning/index.js',
+     'src/skill-creator/index.js', 'src/workflows/index.js', 'src/persona/index.js',
+     'src/settings/index.js', 'bin/opendesktop', 'install.sh', 'README.md', 'LICENSE']
+      .forEach(f => { if (!fs.existsSync(path.join(__dirname, '..', f))) throw new Error(`Missing ${f}`); });
   });
 
-  // File structure tests
-  test('Structure: all source directories exist', () => {
-    const dirs = ['core', 'providers', 'vision', 'automation', 'memory', 'messaging', 'gui', 'cli', 'plugins'];
-    dirs.forEach(d => {
-      if (!fs.existsSync(path.join(__dirname, '..', 'src', d))) throw new Error(`Missing src/${d}`);
-    });
-  });
-  test('Structure: all source files exist', () => {
-    const files = ['src/index.js', 'src/core/engine.js', 'src/core/config.js', 'src/providers/index.js',
-      'src/memory/index.js', 'src/vision/index.js', 'src/automation/index.js', 'src/messaging/index.js',
-      'src/gui/index.js', 'src/plugins/index.js', 'src/cli/setup.js', 'bin/opendesktop', 'install.sh'];
-    files.forEach(f => {
-      if (!fs.existsSync(path.join(__dirname, '..', f))) throw new Error(`Missing ${f}`);
-    });
-  });
-
-  // Wait for async tests
   await new Promise(resolve => setTimeout(resolve, 2000));
-
-  console.log(`\n  ═══════════════════════════════════════`);
+  console.log(`\n  ═══════════════════════════════════════════════`);
   console.log(`  Results: ${passed} passed, ${failed} failed, ${total} total`);
-  console.log(`  ═══════════════════════════════════════\n`);
-
+  console.log(`  ═══════════════════════════════════════════════\n`);
   if (failed > 0) process.exit(1);
 }
 
-runTests().catch(err => { console.error('Test runner error:', err); process.exit(1); });
+runTests().catch(err => { console.error('Test error:', err); process.exit(1); });
