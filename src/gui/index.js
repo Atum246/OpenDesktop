@@ -303,10 +303,11 @@ class OpenDesktopGUI {
   }
 
   async _showIoT() {
-    const devices = this.iot.listDevices();
+    const deviceList = this.iot.listDevices();
+    const devices = deviceList.devices || deviceList;
     console.log(chalk.hex('#00FFFF')('\n  🏠 IoT Controller\n'));
     if (!devices.length) console.log(chalk.hex('#888888')('  No devices found.'));
-    else devices.forEach(d => console.log(chalk.hex('#00FFFF')(`  ${d.name}`) + chalk.hex('#888888')(` [${d.type}] ${d.host}`)));
+    else devices.forEach(d => console.log(chalk.hex('#00FFFF')(`  ${d.name}`) + chalk.hex('#888888')(` [${d.type}] ${d.ip || d.host}`)));
     console.log(chalk.hex('#888888')('\n  /iot-discover       — Scan for devices'));
     console.log(chalk.hex('#888888')('  /iot-control <id> <action> — Control device\n'));
   }

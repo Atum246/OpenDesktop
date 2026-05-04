@@ -428,6 +428,7 @@ class SecurityModule {
   getAuditLog(options = {}) {
     let entries = [...this.auditLog];
     if (options.action) entries = entries.filter(e => e.action === options.action);
+    if (options.event) entries = entries.filter(e => e.action === options.event);
     if (options.since) entries = entries.filter(e => new Date(e.timestamp) >= new Date(options.since));
     if (options.limit) entries = entries.slice(-options.limit);
     return entries;

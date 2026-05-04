@@ -211,7 +211,7 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
           '',
           chalk.hex('#FF0000')('═══ MEMORY ═══'),
           chalk.hex('#00FFFF')('/memory') + chalk.hex('#888888')('              — Memory dashboard'),
-          chalk.hex('#00FFFF')('/search <q>') + chalk.hex('#888888')('           — Search memory'),
+          chalk.hex('#00FFFF')('/memory-search <q>') + chalk.hex('#888888')('    — Search memory'),
           chalk.hex('#00FFFF')('/export') + chalk.hex('#888888')('             — Export memory'),
           chalk.hex('#00FFFF')('/history') + chalk.hex('#888888')('             — Chat history'),
           '',
@@ -271,7 +271,12 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
           '',
           chalk.hex('#FF0000')('═══ APPEARANCE ═══'),
           chalk.hex('#00FFFF')('/theme <name>') + chalk.hex('#888888')('            — Change theme'),
-          chalk.hex('#00FFFF')('/clear') + chalk.hex('#888888')('              — Clear screen')
+          chalk.hex('#00FFFF')('/clear') + chalk.hex('#888888')('              — Clear screen'),
+          '',
+          chalk.hex('#FF0000')('═══ WEB SEARCH ═══'),
+          chalk.hex('#00FFFF')('/web-search <query>') + chalk.hex('#888888')('     — Web search'),
+          chalk.hex('#00FFFF')('/deep-search <topic>') + chalk.hex('#888888')('    — Deep search'),
+          chalk.hex('#00FFFF')('/scrape <url>') + chalk.hex('#888888')('          — Scrape URL')
         ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red', title: `⚡ ${this.aiName} Help`, titleAlignment: 'center' }));
         break;
 
@@ -303,7 +308,12 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         break;
       }
 
-      case '/search': const results = this.memory.search(args); console.log(chalk.hex('#00FFFF')(`Found ${results.length} results:`)); results.slice(0, 10).forEach(r => console.log(chalk.hex('#888888')(`  [${r.type}]`) + ` ${JSON.stringify(r.data).slice(0, 120)}`)); break;
+      case '/memory-search': {
+        const results = this.memory.search(args);
+        console.log(chalk.hex('#00FFFF')(`Found ${results.length} memory results:`));
+        results.slice(0, 10).forEach(r => console.log(chalk.hex('#888888')(`  [${r.type}]`) + ` ${JSON.stringify(r.data).slice(0, 120)}`));
+        break;
+      }
 
       case '/screen':
         const spin = ora('📸 Taking screenshot...').start();
@@ -486,11 +496,12 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       case '/clear': process.stdout.write('\x1B[2J\x1B[0f'); break;
 
       // ═══ WEB SEARCH ═══
-      case '/search': {
-        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /search <query>')); break; }
+      case '/web-search': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /web-search <query>')); break; }
         const spin = ora('🔍 Searching the web...').start();
-        const results = await this.webSearch.search(args);
+        const searchResult = await this.webSearch.search(args);
         spin.stop();
+        const results = searchResult.results || searchResult;
         console.log(chalk.hex('#00FF40')(`✅ Found ${results.length} results:\n`));
         results.slice(0, 10).forEach((r, i) => {
           console.log(chalk.hex('#00FFFF')(`  ${i + 1}. ${r.title}`));
@@ -503,10 +514,11 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       case '/deep-search': {
         if (!args) { console.log(chalk.hex('#FF0000')('Usage: /deep-search <topic>')); break; }
         const spin = ora('🔍 Deep searching...').start();
-        const results = await this.webSearch.deepSearch(args);
+        const deepResult = await this.webSearch.deepSearch(args);
         spin.stop();
-        console.log(chalk.hex('#00FF40')(`✅ Deep search: ${results.length} results\n`));
-        results.slice(0, 15).forEach((r, i) => {
+        const deepResults = deepResult.primaryResults || deepResult.results || deepResult;
+        console.log(chalk.hex('#00FF40')(`✅ Deep search: ${deepResults.length} results\n`));
+        (Array.isArray(deepResults) ? deepResults : []).slice(0, 15).forEach((r, i) => {
           console.log(chalk.hex('#00FFFF')(`  ${i + 1}. ${r.title} [${r.source}]`));
           console.log(chalk.hex('#888888')(`     ${r.snippet?.slice(0, 120)}`));
         });
@@ -521,18 +533,19 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         if (result.error) console.log(chalk.hex('#FF0000')(`❌ ${result.error}`));
         else {
           console.log(chalk.hex('#00FF40')(`✅ ${result.title}`));
-          console.log(result.text.slice(0, 500));
+          console.log((result.content || result.text || '').slice(0, 500));
         }
         break;
       }
 
       // ═══ IoT ═══
       case '/iot': {
-        const devices = this.iot.listDevices();
+        const deviceList = this.iot.listDevices();
+        const devices = deviceList.devices || deviceList;
         if (!devices.length) console.log(chalk.hex('#888888')('  No devices found. Use /iot-discover'));
         else {
           console.log(chalk.hex('#00FF40')('🏠 IoT Devices:\n'));
-          devices.forEach(d => console.log(chalk.hex('#00FFFF')(`  ${d.name}`) + chalk.hex('#888888')(` [${d.type}] ${d.host}`)));
+          devices.forEach(d => console.log(chalk.hex('#00FFFF')(`  ${d.name}`) + chalk.hex('#888888')(` [${d.type}] ${d.ip || d.host}`)));
         }
         break;
       }
@@ -556,14 +569,19 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       // ═══ SECURITY ═══
       case '/security': {
         const report = this.security.getSecurityReport();
+        const lockStatus = this.security.getLockStatus();
         console.log(require('boxen')([
           chalk.hex('#FF0000')('🛡️ Security Report'),
           '',
-          chalk.hex('#00FFFF')('Session: ') + `${report.sessionDuration}s`,
-          chalk.hex('#00FFFF')('Audit entries: ') + report.totalAuditEntries,
-          chalk.hex('#00FFFF')('Blocked attempts: ') + report.blockedAttempts,
-          chalk.hex('#00FFFF')('Anomalies: ') + report.anomalies,
-          chalk.hex('#00FFFF')('Encrypted credentials: ') + report.encryptedCredentials
+          chalk.hex('#00FFFF')('Total audit entries: ') + report.totalAuditEntries,
+          chalk.hex('#00FFFF')('Last 24h events: ') + report.last24h?.total,
+          chalk.hex('#00FFFF')('Blocked attempts: ') + report.last24h?.blocked,
+          chalk.hex('#00FFFF')('Violations: ') + report.last24h?.violations,
+          chalk.hex('#00FFFF')('Sandbox enabled: ') + report.sandbox?.enabled,
+          chalk.hex('#00FFFF')('Sandbox violations: ') + report.sandbox?.violations,
+          chalk.hex('#00FFFF')('Lock status: ') + (lockStatus.locked ? '🔒 Locked' : '🔓 Unlocked'),
+          chalk.hex('#00FFFF')('Rate limiters: ') + report.rateLimiters,
+          chalk.hex('#00FFFF')('Roles: ') + report.roles?.join(', ')
         ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
         break;
       }

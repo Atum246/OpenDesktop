@@ -691,35 +691,6 @@ class IoTController extends EventEmitter {
 
   _buildMQTTPublish(topic, message) {
     const topicBuf = Buffer.from(topic);
-    const msgBuf = Buffer.from(message);
-    const topicLen = topicBuf.length;
-    const remainingLen = 2 + topicLen + msgBuf.length;
-
-    const header = Buffer.alloc(2 + remainingLen);
-    header[0] = 0x30; // PUBLISH, QoS 0
-    header[1] = remainingLen;
-    header.writeUInt16BE(topicLen, 2);
-    topicBuf.copy(header, 4);
-    msgBuf.copy(header, 4 + topicLen);
-    return header;
-  }
-
-  _buildMQTTPublish(topic, message) {
-    const topicBuf = Buffer.from(topic);
-    const msgBuf = Buffer.from(typeof message === 'string' ? message : JSON.stringify(message));
-    const topicLen = topicBuf.length;
-    const remainingLen = 2 + topicLen + msgBuf.length;
-    const header = Buffer.alloc(2 + remainingLen);
-    header[0] = 0x30;
-    header[1] = remainingLen;
-    header.writeUInt16BE(topicLen, 2);
-    topicBuf.copy(header, 4);
-    msgBuf.copy(header, 4 + topicLen);
-    return header;
-  }
-
-  _buildMQTTPublish(topic, message) {
-    const topicBuf = Buffer.from(topic);
     const msgBuf = Buffer.from(typeof message === 'string' ? message : JSON.stringify(message));
     const remainingLen = 2 + topicBuf.length + msgBuf.length;
     const buf = Buffer.alloc(2 + remainingLen);
