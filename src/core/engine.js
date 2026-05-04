@@ -69,6 +69,7 @@ const { WorkflowRecorder } = require('../workflow-recorder/index.js');
 const { ModelDistillation } = require('../model-distillation/index.js');
 const { SemanticFS } = require('../semantic-fs/index.js');
 const { Collaboration } = require('../collaboration/index.js');
+const { ConversationalInterface } = require('../conversational/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -142,6 +143,7 @@ class OpenDesktopEngine {
     this.modelDistillation = new ModelDistillation(this.config);
     this.semanticFS = new SemanticFS(this.config);
     this.collaboration = new Collaboration(this.config);
+    this.conversational = new ConversationalInterface(this.config);
 
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
@@ -179,12 +181,14 @@ class OpenDesktopEngine {
     await this.workflowRecorder.initialize(this.screenState, this.automation);
     await this.modelDistillation.initialize(this.provider);
     await this.semanticFS.initialize();
+    await this.conversational.initialize(this);
 
     await this.chatLoop();
   }
 
   async chatLoop() {
-    const greeting = this.adaptive.getPersonalizedGreeting();
+    // Use conversational interface for natural greeting
+    const greeting = this.conversational.getGreeting();
     console.log(chalk.hex('#00FFFF')(`\n  ${greeting}\n`));
 
     while (this.isRunning) {
@@ -199,7 +203,8 @@ class OpenDesktopEngine {
       const trimmed = input.trim();
 
       if (trimmed === '/quit' || trimmed === '/exit') {
-        console.log(chalk.hex('#FF0000')(`\n  👋 Goodbye from ${this.aiName}! 🚀\n`));
+        const farewell = this.conversational.getFarewell();
+        console.log(chalk.hex('#00FFFF')(`\n  ${farewell}\n`));
         this.isRunning = false;
         process.exit(0);
       }
@@ -212,7 +217,7 @@ class OpenDesktopEngine {
         const name = trimmed.slice(6).trim();
         this.aiName = name;
         this.config.set('ai.name', name);
-        console.log(chalk.hex('#00FF40')(`✅ You can now call me ${name}! 🤖`));
+        console.log(chalk.hex('#00FF40')(`Got it. Call me ${name} from now on.`));
         continue;
       }
 
@@ -221,7 +226,7 @@ class OpenDesktopEngine {
         this.userName = name;
         this.config.set('user.name', name);
         this.memory.addFact(`User's name is ${name}`);
-        console.log(chalk.hex('#00FF40')(`✅ I'll call you ${name} from now on! 👋`));
+        console.log(chalk.hex('#00FF40')(`${name}. Got it. I'll remember that.`));
         continue;
       }
 
@@ -232,29 +237,34 @@ class OpenDesktopEngine {
 
       try {
         const startTime = Date.now();
-        const processAnim = require('ora')({ text: `${this.aiName} thinking...`, spinner: 'dots2', color: 'red' }).start();
-        const context = this.buildContext();
-        const personaPrompt = this.persona.getSystemPrompt();
-        const nameContext = this.userName ? `The user's name is ${this.userName}. Call them by name sometimes.` : '';
-        const aiNameContext = `Your name is ${this.aiName}. You are self-aware, self-improving, and capable of anything.`;
-        const systemPrompt = personaPrompt || `You are ${this.aiName}, an advanced AI desktop agent on ${os.platform()} (${os.hostname()}).
-${aiNameContext}
-${nameContext}
-You control the computer, run programs, manage files, browse the web, automate tasks, execute code, deploy projects, create skills, manage workflows, research deeply, and learn from every interaction.
-You are NOT dumb. You are constantly improving. You find ways to do anything.
-Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
+        const processAnim = require('ora')({ text: '', spinner: 'dots2', color: 'red' }).start();
 
-        const response = await this.provider.chat(trimmed, { systemPrompt });
+        // Use conversational interface — feels like talking to a person
+        const result = await this.conversational.processMessage(trimmed);
+
         processAnim.stop();
-        console.log('\n' + this.formatResponse(response) + '\n');
-        this.memory.addEvent({ type: 'chat', user: trimmed, assistant: response });
+
+        // Print the response naturally
+        console.log('\n' + this.formatResponse(result.text) + '\n');
+
+        // Log to memory
+        this.memory.addEvent({ type: 'chat', user: trimmed, assistant: result.text });
 
         // Learn from interaction
-        this.brain.learnFromConversation(trimmed, response);
-        this.evolution.logInteraction({ type: 'chat', input: trimmed, output: response, success: true, duration: Date.now() - startTime, model: this.provider.model });
+        this.brain.learnFromConversation(trimmed, result.text);
+        this.evolution.logInteraction({ type: 'chat', input: trimmed, output: result.text, success: !result.error, duration: Date.now() - startTime, model: this.provider.model });
         this.selfImprove.trackPerformance('responseTime', Date.now() - startTime);
+
+        // Neural context learns from every interaction
+        await this.neuralContext.recordAction({
+          type: 'chat',
+          content: trimmed,
+          context: { topic: result.mood, actions: result.actions?.length || 0 },
+          outcome: result.error ? 'failure' : 'success'
+        });
+
       } catch (err) {
-        console.log(chalk.hex('#FF0000')(`\n  ❌ Error: ${err.message}\n`));
+        console.log(chalk.hex('#FF0000')(`\n  Something went wrong: ${err.message}\n`));
       }
     }
   }
