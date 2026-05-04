@@ -46,10 +46,29 @@ async function setup() {
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
   console.log('');
 
+  // Auto-detect timezone
+  let detectedTimezone = 'UTC';
+  try {
+    detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch (e) {}
+
+  // Get UTC offset for display
+  const tzOffset = (() => {
+    try {
+      const now = new Date();
+      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: detectedTimezone }));
+      const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const diff = (tzDate - utcDate) / 3600000;
+      const sign = diff >= 0 ? '+' : '';
+      return `UTC${sign}${diff}`;
+    } catch (e) { return ''; }
+  })();
+
   const identity = await inquirer.prompt([
     { type: 'input', name: 'userName', message: chalk.hex('#FFD700')('👤 What\'s your name?'), validate: v => v.trim().length > 0 || 'Name is required' },
     { type: 'input', name: 'aiName', message: chalk.hex('#FFD700')('🤖 What should I be called?'), default: 'OpenDesktop' },
-    { type: 'list', name: 'timezone', message: chalk.hex('#FFD700')('🌍 Your timezone:'), choices: [
+    { type: 'list', name: 'timezone', message: chalk.hex('#FFD700')(`🌍 Your timezone (${chalk.white(detectedTimezone)} ${tzOffset} detected):`), choices: [
+      { name: `✅ ${detectedTimezone} (${tzOffset}) — Detected`, value: detectedTimezone },
       { name: '🇺🇸 Eastern (US)', value: 'America/New_York' },
       { name: '🇺🇸 Central (US)', value: 'America/Chicago' },
       { name: '🇺🇸 Pacific (US)', value: 'America/Los_Angeles' },
@@ -62,7 +81,7 @@ async function setup() {
       { name: '🇧🇷 São Paulo (BR)', value: 'America/Sao_Paulo' },
       { name: '🌐 UTC', value: 'UTC' },
       { name: '⏭️ Skip', value: 'skip' }
-    ]}
+    ], default: detectedTimezone }
   ]);
 
   console.log(chalk.hex('#00FF40')(`\n  ✅ Hey ${identity.userName}! I'm ${identity.aiName}. Let's set things up.\n`));
