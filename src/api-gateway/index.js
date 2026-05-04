@@ -310,12 +310,17 @@ class APIGateway extends EventEmitter {
     let payloadLength = buffer[1] & 0x7F;
 
     if (payloadLength === 126) {
+      if (buffer.length < 4) return null;
       payloadLength = buffer.readUInt16BE(2);
       offset = 4;
     } else if (payloadLength === 127) {
+      if (buffer.length < 10) return null;
       payloadLength = Number(buffer.readBigUInt64BE(2));
       offset = 10;
     }
+
+    // Validate frame has masking key and payload
+    if (buffer.length < offset + 4 + payloadLength) return null;
 
     const maskKey = buffer.slice(offset, offset + 4);
     offset += 4;
@@ -435,10 +440,21 @@ class APIGateway extends EventEmitter {
   _parseBody(req) {
     return new Promise((resolve) => {
       let body = '';
-      req.on('data', chunk => body += chunk);
+      const maxSize = 1024 * 1024; // 1MB limit
+      let size = 0;
+      req.on('data', chunk => {
+        size += chunk.length;
+        if (size > maxSize) {
+          req.destroy();
+          resolve({ error: 'Request body too large' });
+          return;
+        }
+        body += chunk;
+      });
       req.on('end', () => {
         try { resolve(JSON.parse(body)); } catch { resolve({}); }
       });
+      req.on('error', () => resolve({}));
     });
   }
 

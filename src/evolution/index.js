@@ -331,7 +331,7 @@ Return ONLY the JavaScript code, no explanations.`,
     };
   }
 
-  async _generateImprovementSuggestions(report, candidates, corrections) {
+  _generateImprovementSuggestions(report, candidates, corrections) {
     const suggestions = [];
 
     if (report.avgDuration > 5000) {

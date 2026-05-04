@@ -88,7 +88,8 @@ class BrowserEngine extends EventEmitter {
       const req = lib.request(reqOptions, (res) => {
         // Follow redirects
         if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-          return this.download(res.headers.location, { ...options, filename }).then(resolve).catch(reject);
+          const redirectUrl = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, url).href;
+          return this.download(redirectUrl, { ...options, filename }).then(resolve).catch(reject);
         }
 
         if (res.statusCode !== 200) {
@@ -113,25 +114,30 @@ class BrowserEngine extends EventEmitter {
         });
 
         res.on('end', () => {
-          fileStream.end();
-          const duration = Date.now() - startTime;
+          fileStream.end(() => {
+            const duration = Date.now() - startTime;
 
-          const result = {
-            success: true,
-            url,
-            path: outputPath,
-            filename,
-            size: downloaded,
-            duration,
-            speed: Math.round(downloaded / (duration / 1000))
-          };
+            const result = {
+              success: true,
+              url,
+              path: outputPath,
+              filename,
+              size: downloaded,
+              duration,
+              speed: Math.round(downloaded / (duration / 1000))
+            };
 
-          this.downloads.push({ ...result, timestamp: Date.now() });
-          this.emit('download-complete', result);
-          resolve(result);
+            this.downloads.push({ ...result, timestamp: Date.now() });
+            this.emit('download-complete', result);
+            resolve(result);
+          });
         });
 
-        res.on('error', reject);
+        res.on('error', (err) => {
+          fileStream.destroy();
+          try { fs.unlinkSync(outputPath); } catch {}
+          reject(err);
+        });
       });
 
       req.on('error', reject);
@@ -555,14 +561,15 @@ Return as a numbered list from easiest to hardest.`,
       } catch { return { source: 'ai-analysis', result: 'Analysis failed' }; }
     })());
 
-    const allResults = await Promise.all(strategies);
+    const allResults = await Promise.allSettled(strategies);
+    const settledResults = allResults.map(r => r.status === 'fulfilled' ? r.value : { source: 'error', results: [], error: r.reason?.message });
 
     return {
       goal,
       timestamp: new Date().toISOString(),
-      strategies: allResults,
-      totalResults: allResults.reduce((s, r) => s + (r.results?.length || 0), 0),
-      conclusion: `Found ${allResults.length} strategies to accomplish: "${goal}"`
+      strategies: settledResults,
+      totalResults: settledResults.reduce((s, r) => s + (r.results?.length || 0), 0),
+      conclusion: `Found ${settledResults.length} strategies to accomplish: "${goal}"`
     };
   }
 

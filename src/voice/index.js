@@ -74,7 +74,7 @@ class VoiceSystem {
       const provider = this.engine?.provider;
       if (provider?.providerName === 'openai' || provider?.providerName === 'openrouter') {
         const axios = require('axios');
-        const FormData = globalThis.FormData || require('form-data');
+        const FormData = typeof globalThis.FormData !== 'undefined' ? globalThis.FormData : require('form-data');
         const form = new FormData();
         const fileStream = fs.createReadStream(audioPath);
         form.append('file', fileStream, path.basename(audioPath));

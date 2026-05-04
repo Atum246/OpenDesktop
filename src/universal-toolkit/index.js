@@ -335,6 +335,8 @@ ${content.split('\n').map(line => {
   // ═══ CHART / GRAPH GENERATION ═══
 
   async generateChart(data, options = {}) {
+    if (!data || !data.length) return { success: false, error: 'No data provided for chart' };
+
     const type = options.type || 'bar'; // bar, line, pie, scatter
     const title = options.title || 'Chart';
     const width = options.width || 800;
@@ -347,7 +349,7 @@ ${content.split('\n').map(line => {
     const chartH = height - padding * 2;
 
     if (type === 'bar') {
-      const maxVal = Math.max(...data.map(d => d.value));
+      const maxVal = Math.max(...data.map(d => d.value)) || 1;
       const barW = chartW / data.length * 0.8;
       const gap = chartW / data.length * 0.2;
 

@@ -306,20 +306,33 @@ class IoTController extends EventEmitter {
       // Skip questions
       const qdcount = msg.readUInt16BE(4);
       for (let i = 0; i < qdcount; i++) {
-        while (msg[offset] !== 0 && offset < msg.length) {
+        while (offset < msg.length && msg[offset] !== 0) {
           if ((msg[offset] & 0xC0) === 0xC0) { offset += 2; break; }
           offset += msg[offset] + 1;
         }
-        if (msg[offset] === 0) offset++;
+        if (offset < msg.length && msg[offset] === 0) offset++;
         offset += 4; // type + class
       }
       // Parse answer
       if (offset < msg.length) {
-        while (msg[offset] !== 0 && offset < msg.length) {
+        while (offset < msg.length && msg[offset] !== 0) {
           if ((msg[offset] & 0xC0) === 0xC0) { offset += 2; break; }
           offset += msg[offset] + 1;
         }
-        return { name: 'mDNS Device', services: ['http'] };
+        // Extract port if available (skip name, type, class, ttl, rdlength)
+        let port = 80;
+        if (offset + 10 < msg.length) {
+          offset += 1; // null terminator
+          const rtype = msg.readUInt16BE(offset); offset += 2;
+          offset += 2; // class
+          offset += 4; // ttl
+          const rdlen = msg.readUInt16BE(offset); offset += 2;
+          if (rtype === 33 && rdlen >= 6 && offset + 6 <= msg.length) { // SRV record
+            offset += 4; // priority + weight
+            port = msg.readUInt16BE(offset);
+          }
+        }
+        return { name: 'mDNS Device', services: ['http'], port };
       }
     } catch {}
     return null;

@@ -107,13 +107,13 @@ async function runTests() {
   // === ENGINE ===
   const Engine = require('../src/core/engine.js');
   test('Engine: init', () => { new Engine(); });
-  test('Engine: ALL 28 subsystems', () => {
+  test('Engine: ALL 38 subsystems', () => {
     const e = new Engine();
     ['provider', 'memory', 'automation', 'vision', 'plugins', 'messaging', 'hotkey', 'voice',
      'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings',
      'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter',
      'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer',
-     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety', 'toolkit']
+     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety', 'toolkit', 'browser', 'reverseEng']
       .forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
   test('Engine: AI name config', () => { const e = new Engine(); if (!e.aiName) throw new Error(); });
@@ -156,7 +156,7 @@ async function runTests() {
   test('Brain: init', () => { new ContextualBrain(new Config(), new MemorySystem(new Config())); });
   test('Brain: add node', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); const id = b.addNode('fact', 'test fact'); if (!id) throw new Error(); });
   test('Brain: query', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); b.addNode('fact', 'javascript is great'); const r = b.query('javascript'); if (!r.length) throw new Error(); });
-  test('Brain: learn preference', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); b.learnPreference('color', 'blue'); });
+  test('Brain: learn preference', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); b.learnPreference('color', 'blue'); const r = b.query('color', { types: ['preference'] }); if (!r.length) throw new Error('Preference not stored'); });
   test('Brain: stats', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); if (!('totalNodes' in b.getStats())) throw new Error(); });
 
   const ProactiveEngine = require('../src/proactive/index.js');

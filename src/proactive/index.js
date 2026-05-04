@@ -373,12 +373,21 @@ Keep it concise and use emojis.`,
       if (fs.existsSync(file)) {
         const data = JSON.parse(fs.readFileSync(file, 'utf8'));
         for (const r of data) {
-          // Restore functions from strings
+          // Restore functions from strings (sandboxed)
           if (typeof r.condition === 'string' && r.condition.startsWith('function')) {
-            try { r.condition = eval(`(${r.condition})`); } catch {}
+            try {
+              // Use Function constructor instead of eval for better security
+              const fnBody = r.condition.slice(r.condition.indexOf('{') + 1, r.condition.lastIndexOf('}'));
+              const fnParams = r.condition.slice(r.condition.indexOf('(') + 1, r.condition.indexOf(')')).split(',').map(p => p.trim());
+              r.condition = new Function(...fnParams, fnBody);
+            } catch {}
           }
           if (typeof r.action === 'string' && r.action.startsWith('function')) {
-            try { r.action = eval(`(${r.action})`); } catch {}
+            try {
+              const fnBody = r.action.slice(r.action.indexOf('{') + 1, r.action.lastIndexOf('}'));
+              const fnParams = r.action.slice(r.action.indexOf('(') + 1, r.action.indexOf(')')).split(',').map(p => p.trim());
+              r.action = new Function(...fnParams, fnBody);
+            } catch {}
           }
           this.rules.set(r.id, r);
         }

@@ -460,7 +460,6 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         break;
 
       case '/open': await this.automation.openApp(args); console.log(chalk.hex('#00FF40')(`✅ Opening ${args}...`)); break;
-      case '/browse': await this.automation.openBrowser(args || 'https://google.com'); console.log(chalk.hex('#00FF40')('✅ Opening browser...')); break;
 
       case '/system':
         const sys = await this.automation.getSystemInfo();
@@ -526,10 +525,17 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       // ═══ SELF-IMPROVEMENT ═══
       case '/evolve': {
         const spin = ora('🧬 Evolving...').start();
-        const r = await this.selfImprove.evolve();
+        const [selfResult, evoResult] = await Promise.all([this.selfImprove.evolve(), this.evolution.evolve()]);
         spin.stop();
-        console.log(chalk.hex('#00FF40')(`✅ Evolution complete. Findings: ${r.actions.length}`));
-        r.actions.forEach(a => console.log(chalk.hex('#888888')(`  • ${a.findings?.join(', ') || a.type}`)));
+        console.log(chalk.hex('#00FF40')(`✅ Evolution v${evoResult.version} complete!`));
+        console.log(chalk.hex('#00FFFF')(`  Score: ${evoResult.improvementScore}/100`));
+        console.log(chalk.hex('#00FFFF')(`  Findings: ${evoResult.findings.length} (evolution) + ${selfResult.actions.length} (self-improve)`));
+        evoResult.findings.forEach(f => console.log(chalk.hex('#888888')(`    • ${f.message}`)));
+        selfResult.actions.forEach(a => console.log(chalk.hex('#888888')(`    • ${a.findings?.join(', ') || a.type}`)));
+        if (evoResult.suggestions.length) {
+          console.log(chalk.hex('#FFD700')('\n  💡 Suggestions:'));
+          evoResult.suggestions.forEach(s => console.log(chalk.hex('#888888')(`    • ${s.suggestion}`)));
+        }
         break;
       }
       case '/optimize': {
@@ -996,21 +1002,7 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         break;
       }
 
-      // ═══ SELF-EVOLUTION ═══
-      case '/evolve': {
-        const spin = ora('🧬 Evolving...').start();
-        const evoResult = await this.evolution.evolve();
-        spin.stop();
-        console.log(chalk.hex('#00FF40')(`✅ Evolution v${evoResult.version} complete!`));
-        console.log(chalk.hex('#00FFFF')(`  Score: ${evoResult.improvementScore}/100`));
-        console.log(chalk.hex('#00FFFF')(`  Findings: ${evoResult.findings.length}`));
-        evoResult.findings.forEach(f => console.log(chalk.hex('#888888')(`    • ${f.message}`)));
-        if (evoResult.suggestions.length) {
-          console.log(chalk.hex('#FFD700')('\n  💡 Suggestions:'));
-          evoResult.suggestions.forEach(s => console.log(chalk.hex('#888888')(`    • ${s.suggestion}`)));
-        }
-        break;
-      }
+      // ═══ SELF-EVOLUTION (handled above via /evolve) ═══
 
       case '/evolution': {
         const evoStatus = this.evolution.getStatus();
