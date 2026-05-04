@@ -27,6 +27,12 @@ const SocialMediaAutomation = require('../social-media/index.js');
 const DeepResearchSystem = require('../research/index.js');
 const AdaptiveInterface = require('../adaptive/index.js');
 const CodeRewriter = require('../code-rewriter/index.js');
+const WebSearchEngine = require('../web-search/index.js');
+const IoTController = require('../iot/index.js');
+const SecurityModule = require('../security/index.js');
+const ProgramInstaller = require('../program-installer/index.js');
+const AgentOrchestrator = require('../orchestrator/index.js');
+const ModelTrainer = require('../model-trainer/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -52,6 +58,12 @@ class OpenDesktopEngine {
     this.research = new DeepResearchSystem(this.config, this.provider, this.memory);
     this.adaptive = new AdaptiveInterface(this.config, this.memory, this.learning);
     this.codeRewriter = new CodeRewriter(this.config, this.provider, this.memory);
+    this.webSearch = new WebSearchEngine(this.config);
+    this.iot = new IoTController(this.config);
+    this.security = new SecurityModule(this.config);
+    this.installer = new ProgramInstaller(this.config);
+    this.orchestrator = new AgentOrchestrator(this.config, this.provider, this.memory);
+    this.modelTrainer = new ModelTrainer(this.config, this.provider, this.memory);
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
     this.isRunning = false;
@@ -465,6 +477,202 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       case '/history': this.memory.getEvents({ limit: 10 }).forEach(e => { const t = e.timestamp?.slice(11, 19) || '-'; if (e.user) console.log(chalk.hex('#888888')(t) + chalk.hex('#00FFFF')(' 👤 ') + String(e.user).slice(0, 80)); }); break;
       case '/export': const data = this.memory.exportAll(); const p = path.join(os.homedir(), '.opendesktop', 'memory-export.json'); fs.writeFileSync(p, JSON.stringify(data, null, 2)); console.log(chalk.hex('#00FF40')(`✅ Exported to ${p}`)); break;
       case '/clear': process.stdout.write('\x1B[2J\x1B[0f'); break;
+
+      // ═══ WEB SEARCH ═══
+      case '/search': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /search <query>')); break; }
+        const spin = ora('🔍 Searching the web...').start();
+        const results = await this.webSearch.search(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Found ${results.length} results:\n`));
+        results.slice(0, 10).forEach((r, i) => {
+          console.log(chalk.hex('#00FFFF')(`  ${i + 1}. ${r.title}`));
+          console.log(chalk.hex('#888888')(`     ${r.snippet?.slice(0, 100)}`));
+          console.log(chalk.hex('#708090')(`     ${r.url}`));
+        });
+        break;
+      }
+
+      case '/deep-search': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /deep-search <topic>')); break; }
+        const spin = ora('🔍 Deep searching...').start();
+        const results = await this.webSearch.deepSearch(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Deep search: ${results.length} results\n`));
+        results.slice(0, 15).forEach((r, i) => {
+          console.log(chalk.hex('#00FFFF')(`  ${i + 1}. ${r.title} [${r.source}]`));
+          console.log(chalk.hex('#888888')(`     ${r.snippet?.slice(0, 120)}`));
+        });
+        break;
+      }
+
+      case '/scrape': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /scrape <url>')); break; }
+        const spin = ora('📄 Scraping...').start();
+        const result = await this.webSearch.scrapeUrl(args);
+        spin.stop();
+        if (result.error) console.log(chalk.hex('#FF0000')(`❌ ${result.error}`));
+        else {
+          console.log(chalk.hex('#00FF40')(`✅ ${result.title}`));
+          console.log(result.text.slice(0, 500));
+        }
+        break;
+      }
+
+      // ═══ IoT ═══
+      case '/iot': {
+        const devices = this.iot.listDevices();
+        if (!devices.length) console.log(chalk.hex('#888888')('  No devices found. Use /iot-discover'));
+        else {
+          console.log(chalk.hex('#00FF40')('🏠 IoT Devices:\n'));
+          devices.forEach(d => console.log(chalk.hex('#00FFFF')(`  ${d.name}`) + chalk.hex('#888888')(` [${d.type}] ${d.host}`)));
+        }
+        break;
+      }
+
+      case '/iot-discover': {
+        const spin = ora('🔍 Scanning for IoT devices...').start();
+        const devices = await this.iot.discover();
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Found ${devices.length} devices`));
+        devices.forEach(d => console.log(chalk.hex('#00FFFF')(`  ${d.name}`) + chalk.hex('#888888')(` [${d.type}] ${d.host}`)));
+        break;
+      }
+
+      case '/iot-control': {
+        const [deviceId, action, ...params] = args.split(' ');
+        const result = await this.iot.control(deviceId, action, { level: parseInt(params[0]) });
+        console.log(result.success ? chalk.hex('#00FF40')(`✅ ${result.device}: ${action}`) : chalk.hex('#FF0000')(`❌ ${result.error}`));
+        break;
+      }
+
+      // ═══ SECURITY ═══
+      case '/security': {
+        const report = this.security.getSecurityReport();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🛡️ Security Report'),
+          '',
+          chalk.hex('#00FFFF')('Session: ') + `${report.sessionDuration}s`,
+          chalk.hex('#00FFFF')('Audit entries: ') + report.totalAuditEntries,
+          chalk.hex('#00FFFF')('Blocked attempts: ') + report.blockedAttempts,
+          chalk.hex('#00FFFF')('Anomalies: ') + report.anomalies,
+          chalk.hex('#00FFFF')('Encrypted credentials: ') + report.encryptedCredentials
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/encrypt': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /encrypt <text>')); break; }
+        const encrypted = this.security.encrypt(args);
+        console.log(chalk.hex('#00FF40')('🔒 Encrypted: ') + encrypted);
+        break;
+      }
+
+      case '/audit': {
+        const logs = this.security.getAuditLog({ limit: 10 });
+        logs.forEach(l => console.log(chalk.hex('#888888')(`  [${l.timestamp?.slice(11, 19)}]`) + chalk.hex('#00FFFF')(` ${l.event}`)));
+        break;
+      }
+
+      // ═══ PROGRAM INSTALLER ═══
+      case '/install': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /install <program>')); break; }
+        const spin = ora(`📦 Installing ${args}...`).start();
+        const result = await this.installer.install(args);
+        spin.stop();
+        console.log(result.success ? chalk.hex('#00FF40')(`✅ Installed: ${result.program}`) : chalk.hex('#FF0000')(`❌ ${result.error}`));
+        if (result.suggestion) console.log(chalk.hex('#888888')(`💡 Try: ${result.suggestion}`));
+        break;
+      }
+
+      case '/uninstall': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /uninstall <program>')); break; }
+        const result = await this.installer.uninstall(args);
+        console.log(result.success ? chalk.hex('#00FF40')(`✅ Uninstalled: ${args}`) : chalk.hex('#FF0000')(`❌ ${result.error}`));
+        break;
+      }
+
+      case '/programs': {
+        const spin = ora('📋 Listing installed programs...').start();
+        const list = await this.installer.listInstalled();
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`📦 ${list.length} programs installed:`));
+        list.slice(0, 30).forEach(p => console.log(chalk.hex('#00FFFF')(`  ${p.name}`) + chalk.hex('#888888')(` ${p.version}`)));
+        break;
+      }
+
+      case '/pkg-manager': {
+        const info = this.installer.getPackageManager();
+        console.log(chalk.hex('#00FF40')(`📦 Package Manager: ${info.primary}`));
+        console.log(chalk.hex('#888888')(`  Platform: ${info.platform}`));
+        console.log(chalk.hex('#888888')(`  Available: ${info.detected.join(', ')}`));
+        break;
+      }
+
+      // ═══ AGENT ORCHESTRATOR ═══
+      case '/orchestrate': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /orchestrate <complex task>')); break; }
+        const spin = ora('🧠 Orchestrating agents...').start();
+        const result = await this.orchestrator.orchestrate(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Task completed in ${result.duration}ms`));
+        console.log(chalk.hex('#888888')(`  Agents: ${result.agentCount || 1}, Success: ${result.success}`));
+        if (result.results) {
+          result.results.forEach(r => console.log(chalk.hex('#00FFFF')(`  ${r.agent}`) + chalk.hex('#888888')(` [${r.status}] ${r.summary?.slice(0, 80)}`)));
+        }
+        break;
+      }
+
+      case '/progress': {
+        const p = this.orchestrator.getProgress();
+        console.log(chalk.hex('#00FF40')(`📊 Progress: ${p.total} agents, ${p.running} running, ${p.completed} completed, ${p.error} errors`));
+        break;
+      }
+
+      // ═══ MODEL TRAINER ═══
+      case '/train': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /train <task description>')); break; }
+        const spin = ora('📚 Generating training data...').start();
+        const result = await this.modelTrainer.generateTrainingData(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Training data: ${result.examples} examples → ${result.filename}`));
+        break;
+      }
+
+      case '/fine-tune': {
+        const [modelName, ...rest] = args.split(' ');
+        const trainingFile = rest.join(' ');
+        if (!modelName || !trainingFile) { console.log(chalk.hex('#FF0000')('Usage: /fine-tune <model-name> <training-file>')); break; }
+        const spin = ora(`🔬 Fine-tuning ${modelName}...`).start();
+        const result = await this.modelTrainer.fineTune(modelName, trainingFile);
+        spin.stop();
+        console.log(result.success ? chalk.hex('#00FF40')(`✅ Model created: ${result.model} v${result.version}`) : chalk.hex('#FF0000')(`❌ ${result.error}`));
+        if (result.suggestion) console.log(chalk.hex('#888888')(`💡 ${result.suggestion}`));
+        break;
+      }
+
+      case '/compare-models': {
+        const models = args.split(' ');
+        if (models.length < 2) { console.log(chalk.hex('#FF0000')('Usage: /compare-models <model1> <model2> [model3...]')); break; }
+        const spin = ora('⚖️ Comparing models...').start();
+        const result = await this.modelTrainer.compareModels(models, 'What is the meaning of life?');
+        spin.stop();
+        result.results.forEach(r => {
+          console.log(chalk.hex('#00FFFF')(`  ${r.model}`) + chalk.hex('#888888')(` — ${r.duration}ms, ${r.tokensPerSecond || 0} tok/s`));
+        });
+        break;
+      }
+
+      case '/model-hosting': {
+        const suggestions = this.modelTrainer.suggestHosting(args || 'medium');
+        console.log(chalk.hex('#00FF40')('☁️ Cloud Hosting Options:\n'));
+        suggestions.suggestions.forEach(s => {
+          console.log(chalk.hex('#00FFFF')(`  ${s.name}`) + chalk.hex('#888888')(` — ${s.cost}`));
+          console.log(chalk.hex('#708090')(`    ${s.bestFor}`));
+        });
+        console.log(chalk.hex('#FFD700')(`\n💡 Recommendation: ${suggestions.recommendation}`));
+        break;
+      }
 
       default:
         console.log(chalk.hex('#FF0000')(`Unknown: ${cmd}. Type /help`));

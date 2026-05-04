@@ -65,7 +65,7 @@ async function runTests() {
   test('Learning: suggestions', () => { new LearningSystem(new Config(), new MemorySystem(new Config())).getSuggestions(); });
 
   const SkillCreator = require('../src/skill-creator/index.js');
-  test('SkillCreator: create', async () => { const r = await new SkillCreator(new Config()).createSkill('test', 'desc'); if (!r.created) throw new Error(); });
+  test('SkillCreator: create', async () => { const r = await new SkillCreator(new Config()).createSkill('test_' + Date.now().toString(36), 'desc'); if (!r.created) throw new Error(); });
 
   const WorkflowBuilder = require('../src/workflows/index.js');
   test('Workflow: create', async () => { const r = await new WorkflowBuilder(new Config(), new AutomationEngine(new Config()), new ProviderRegistry(new Config())).createWorkflow('wf', [{ type: 'command', action: 'echo t' }]); if (!r.created) throw new Error(); });
@@ -107,11 +107,12 @@ async function runTests() {
   // === ENGINE ===
   const Engine = require('../src/core/engine.js');
   test('Engine: init', () => { new Engine(); });
-  test('Engine: ALL 24 subsystems', () => {
+  test('Engine: ALL 28 subsystems', () => {
     const e = new Engine();
     ['provider', 'memory', 'automation', 'vision', 'plugins', 'messaging', 'hotkey', 'voice',
      'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings',
-     'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter']
+     'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter',
+     'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer']
       .forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
   test('Engine: AI name config', () => { const e = new Engine(); if (!e.aiName) throw new Error(); });
@@ -121,11 +122,40 @@ async function runTests() {
   test('Package: name', () => { if (require('../package.json').name !== 'opendesktop-ai') throw new Error(); });
   test('Package: bins', () => { const p = require('../package.json'); if (!p.bin.opendesktop || !p.bin.od) throw new Error(); });
 
-  // === FILE STRUCTURE ===
-  test('Structure: ALL 24 module dirs', () => {
+  // === NEW MODULES ===
+  const WebSearchEngine = require('../src/web-search/index.js');
+  test('WebSearch: init', () => { new WebSearchEngine(new Config()); });
+  test('WebSearch: cache', () => { const w = new WebSearchEngine(new Config()); if (w.getCacheSize() !== 0) throw new Error(); });
+
+  const IoTController = require('../src/iot/index.js');
+  test('IoT: init', () => { new IoTController(new Config()); });
+  test('IoT: list devices', () => { const i = new IoTController(new Config()); const r = i.listDevices(); if (!r && !Array.isArray(r)) throw new Error(); });
+
+  const SecurityModule = require('../src/security/index.js');
+  test('Security: init', () => { new SecurityModule(new Config()); });
+  test('Security: encrypt/decrypt', () => { const s = new SecurityModule(new Config()); const enc = s.encrypt('test'); if (s.decrypt(enc) !== 'test') throw new Error(); });
+  test('Security: sanitize', () => { const s = new SecurityModule(new Config()); const result = s.sanitize('hello;rm -rf /'); if (typeof result !== 'object' && typeof result !== 'string') throw new Error(); });
+  test('Security: hash', () => { const s = new SecurityModule(new Config()); if (!s.hash('test')) throw new Error(); });
+  test('Security: audit log', () => { const s = new SecurityModule(new Config()); s.audit('test_event'); if (!s.getAuditLog({ event: 'test_event' }).length) throw new Error(); });
+
+  const ProgramInstaller = require('../src/program-installer/index.js');
+  test('Installer: init', () => { new ProgramInstaller(new Config()); });
+  test('Installer: package manager', () => { const p = new ProgramInstaller(new Config()); if (!p.getPackageManager()) throw new Error(); });
+
+  const AgentOrchestrator = require('../src/orchestrator/index.js');
+  test('Orchestrator: init', () => { new AgentOrchestrator(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); });
+  test('Orchestrator: progress', () => { const o = new AgentOrchestrator(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); if (!o.getProgress()) throw new Error(); });
+
+  const ModelTrainer = require('../src/model-trainer/index.js');
+  test('ModelTrainer: init', () => { new ModelTrainer(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); });
+  test('ModelTrainer: hosting suggestions', () => { const m = new ModelTrainer(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); if (!m.suggestHosting('small').suggestions.length) throw new Error(); });
+
+  // === STRUCTURE ===
+  test('Structure: ALL 30 module dirs', () => {
     ['core', 'providers', 'vision', 'automation', 'memory', 'messaging', 'gui', 'cli', 'plugins',
      'hotkey', 'voice', 'code-executor', 'deployer', 'learning', 'skill-creator', 'workflows',
-     'persona', 'settings', 'self-improve', 'sub-agents', 'social-media', 'research', 'adaptive', 'code-rewriter']
+     'persona', 'settings', 'self-improve', 'sub-agents', 'social-media', 'research', 'adaptive',
+     'code-rewriter', 'web-search', 'iot', 'security', 'program-installer', 'orchestrator', 'model-trainer']
       .forEach(d => { if (!fs.existsSync(path.join(__dirname, '..', 'src', d))) throw new Error(`Missing: src/${d}`); });
   });
 
