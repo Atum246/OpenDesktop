@@ -84,13 +84,43 @@ class OpenDesktopGUI {
   getThemeColors() {
     const theme = this.config.get('theme', 'hacker-red');
     const themes = {
-      'hacker-red': { primary: '#FF0000', secondary: '#8B0000', accent: '#708090', bg: '#0A0A0A', text: '#FFFFFF', highlight: '#FF4444' },
-      'matrix': { primary: '#00FF00', secondary: '#003300', accent: '#008F00', bg: '#000000', text: '#00FF00', highlight: '#44FF44' },
-      'cyberpunk': { primary: '#00FFFF', secondary: '#FF00FF', accent: '#FFFF00', bg: '#0A0014', text: '#FFFFFF', highlight: '#00FFFF' },
-      'minimal': { primary: '#FFFFFF', secondary: '#CCCCCC', accent: '#888888', bg: '#FFFFFF', text: '#333333', highlight: '#000000' },
-      'vaporwave': { primary: '#FF71CE', secondary: '#01CDFE', accent: '#B967FF', bg: '#1A0033', text: '#FF71CE', highlight: '#FF99DD' }
+      'hacker-red': { primary: '#FF0000', secondary: '#8B0000', accent: '#708090', bg: '#0A0A0A', text: '#FFFFFF', highlight: '#FF4444', dim: '#330000', green: '#00FF41', cyan: '#00FFFF' },
+      'matrix': { primary: '#00FF41', secondary: '#003300', accent: '#008F11', bg: '#000000', text: '#00FF41', highlight: '#44FF44', dim: '#001a00', green: '#00FF41', cyan: '#00FFAA' },
+      'cyberpunk': { primary: '#FF003C', secondary: '#00FFFF', accent: '#FFEE00', bg: '#0A0014', text: '#FFFFFF', highlight: '#FF003C', dim: '#140028', green: '#00FF41', cyan: '#00FFFF' },
+      'minimal': { primary: '#FFFFFF', secondary: '#CCCCCC', accent: '#888888', bg: '#FFFFFF', text: '#333333', highlight: '#000000', dim: '#EEEEEE', green: '#00AA00', cyan: '#0066CC' },
+      'vaporwave': { primary: '#FF71CE', secondary: '#01CDFE', accent: '#B967FF', bg: '#1A0033', text: '#FF71CE', highlight: '#FF99DD', dim: '#0D0019', green: '#01FE01', cyan: '#01CDFE' }
     };
     return themes[theme] || themes['hacker-red'];
+  }
+
+  _center(text, width) {
+    const termW = width || process.stdout.columns || 80;
+    const lines = text.split('\n');
+    return lines.map(line => {
+      const stripped = line.replace(/\x1b\[[0-9;]*m/g, '');
+      const pad = Math.max(0, Math.floor((termW - stripped.length) / 2));
+      return ' '.repeat(pad) + line;
+    }).join('\n');
+  }
+
+  _hackerBox(content, options = {}) {
+    const t = this.getThemeColors();
+    const width = options.width || 70;
+    const title = options.title || '';
+
+    const topBorder = title
+      ? chalk.hex(t.primary)('╔' + '═'.repeat(2) + '[ ' + title + ' ]' + '═'.repeat(Math.max(0, width - title.length - 6)) + '╗')
+      : chalk.hex(t.primary)('╔' + '═'.repeat(width) + '╗');
+
+    const bottomBorder = chalk.hex(t.primary)('╚' + '═'.repeat(width) + '╝');
+
+    const lines = content.split('\n').map(line => {
+      const stripped = line.replace(/\x1b\[[0-9;]*m/g, '');
+      const padding = Math.max(0, width - stripped.length - 2);
+      return chalk.hex(t.primary)('║ ') + line + ' '.repeat(padding) + chalk.hex(t.primary)(' ║');
+    });
+
+    return [topBorder, ...lines, bottomBorder].join('\n');
   }
 
   // ─── RENDER HEADER ───
@@ -101,14 +131,28 @@ class OpenDesktopGUI {
     const userName = this.config.get('user.name', '');
     const persona = this.persona.getActivePersona();
 
-    const line = chalk.hex(t.primary)('─'.repeat(termW));
-    const title = gradient([t.primary, t.secondary])(`  ⚡ ${aiName} v1.0.0`);
-    const info = chalk.hex(t.accent)(` │ ${os.hostname()} │ ${this.provider.providerName} │ ${this.provider.model}`);
-    const userStr = userName ? chalk.hex(t.highlight)(` │ 👤 ${userName}`) : '';
-    const personaStr = persona ? chalk.hex(t.highlight)((` │ 🎭 ${persona.displayName}`)) : '';
+    const line = chalk.hex(t.primary)('═'.repeat(termW));
+
+    // Centered title
+    const titleText = `⚡ ${aiName} v${require('../../package.json').version} ⚡`;
+    const titleStripped = titleText.replace(/\x1b\[[0-9;]*m/g, '');
+    const titlePad = Math.max(0, Math.floor((termW - titleStripped.length) / 2));
+
+    // Info bar
+    const infoParts = [
+      `🔌 ${this.provider.providerName}`,
+      `🎯 ${this.provider.model}`,
+      userName ? `👤 ${userName}` : null,
+      persona ? `🎭 ${persona.displayName}` : null,
+      `🖥️ ${os.hostname()}`
+    ].filter(Boolean);
+    const infoStr = infoParts.join(chalk.hex(t.accent)(' │ '));
+    const infoStripped = infoStr.replace(/\x1b\[[0-9;]*m/g, '');
+    const infoPad = Math.max(0, Math.floor((termW - infoStripped.length) / 2));
 
     console.log(line);
-    console.log(title + info + userStr + personaStr);
+    console.log(' '.repeat(titlePad) + chalk.hex(t.primary).bold(titleText));
+    console.log(' '.repeat(infoPad) + chalk.hex(t.accent)(infoStr));
     console.log(line);
   }
 
@@ -116,39 +160,44 @@ class OpenDesktopGUI {
   renderSidebar() {
     const t = this.getThemeColors();
     const pages = [
-      { icon: '💬', label: 'Chat', key: 'chat' },
-      { icon: '🔍', label: 'Search', key: 'search' },
-      { icon: '🖥️', label: 'System', key: 'system' },
-      { icon: '💻', label: 'Code', key: 'code' },
-      { icon: '🧠', label: 'Memory', key: 'memory' },
-      { icon: '👁️', label: 'Vision', key: 'vision' },
-      { icon: '🤖', label: 'Agents', key: 'agents' },
-      { icon: '🏠', label: 'IoT', key: 'iot' },
-      { icon: '🔒', label: 'Security', key: 'security' },
-      { icon: '📦', label: 'Install', key: 'install' },
-      { icon: '🚀', label: 'Deploy', key: 'deploy' },
-      { icon: '🧩', label: 'Skills', key: 'skills' },
-      { icon: '📋', label: 'Workflows', key: 'workflows' },
-      { icon: '🎭', label: 'Persona', key: 'persona' },
-      { icon: '🎤', label: 'Voice', key: 'voice' },
-      { icon: '📱', label: 'Social', key: 'social' },
-      { icon: '🧠', label: 'Train', key: 'train' },
-      { icon: '⚙️', label: 'Settings', key: 'settings' }
+      { icon: '◆', label: 'Chat', key: 'chat' },
+      { icon: '◆', label: 'Search', key: 'search' },
+      { icon: '◆', label: 'System', key: 'system' },
+      { icon: '◆', label: 'Code', key: 'code' },
+      { icon: '◆', label: 'Memory', key: 'memory' },
+      { icon: '◆', label: 'Vision', key: 'vision' },
+      { icon: '◆', label: 'Agents', key: 'agents' },
+      { icon: '◆', label: 'IoT', key: 'iot' },
+      { icon: '◆', label: 'Security', key: 'security' },
+      { icon: '◆', label: 'Install', key: 'install' },
+      { icon: '◆', label: 'Deploy', key: 'deploy' },
+      { icon: '◆', label: 'Skills', key: 'skills' },
+      { icon: '◆', label: 'Workflows', key: 'workflows' },
+      { icon: '◆', label: 'Persona', key: 'persona' },
+      { icon: '◆', label: 'Voice', key: 'voice' },
+      { icon: '◆', label: 'Social', key: 'social' },
+      { icon: '◆', label: 'Train', key: 'train' },
+      { icon: '◆', label: 'Brain', key: 'brain' },
+      { icon: '◆', label: 'Proactive', key: 'proactive' },
+      { icon: '◆', label: 'Evolution', key: 'evolution' },
+      { icon: '◆', label: 'API', key: 'api' },
+      { icon: '◆', label: 'Trust', key: 'trust' },
+      { icon: '◆', label: 'Settings', key: 'settings' }
     ];
 
-    const sidebar = pages.map(item => {
+    const sidebarLines = pages.map(item => {
       const active = this.currentView === item.key;
-      const prefix = active ? chalk.hex(t.primary)(' ▶ ') : chalk.hex(t.accent)('   ');
-      const label = active ? chalk.white.bold(`${item.icon} ${item.label}`) : chalk.hex(t.accent)(`${item.icon} ${item.label}`);
+      const prefix = active ? chalk.hex(t.primary)(' ▸ ') : chalk.hex(t.dim)('   ');
+      const label = active
+        ? chalk.hex(t.primary).bold(`${item.label}`)
+        : chalk.hex(t.accent)(`${item.label}`);
       return prefix + label;
-    }).join('\n');
-
-    return boxen(sidebar, {
-      padding: { top: 0, bottom: 0, left: 1, right: 2 },
-      borderStyle: 'single', borderColor: 'red',
-      title: chalk.hex(t.primary)('⚡ NAV'),
-      width: 22
     });
+
+    const top = chalk.hex(t.primary)('╔══ NAV ══╗');
+    const bottom = chalk.hex(t.primary)('╚══════════╝');
+
+    return [top, ...sidebarLines, bottom].join('\n');
   }
 
   // ─── RENDER STATUS BAR ───
@@ -157,14 +206,20 @@ class OpenDesktopGUI {
     const stats = this.memory.getStats();
     const hotkey = this.config.get('hotkey.key', 'ctrl+shift+space');
     const progress = this.orchestrator.getProgress();
-    const agentStr = progress.running > 0 ? chalk.hex('#FFD700')(` │ 🤖 ${progress.running} agents running`) : '';
+    const agentStr = progress.running > 0 ? chalk.hex(t.primary)(` │ ◈ ${progress.running} AGENTS`) : '';
+    const termW = process.stdout.columns || 80;
 
-    return chalk.hex(t.primary)('─'.repeat(process.stdout.columns || 80)) + '\n' +
-      chalk.hex('#00FFFF')(`🧠 ${stats.episodicCount} events`) + chalk.hex(t.accent)(' │ ') +
-      chalk.hex('#00FF40')(`✅ ${stats.taskCount} tasks`) + chalk.hex(t.accent)(' │ ') +
-      chalk.hex('#FFD700')(`🔌 ${this.provider.providerName}`) + chalk.hex(t.accent)(' │ ') +
-      chalk.hex('#FF71CE')(`⌨️ ${hotkey}`) + agentStr + chalk.hex(t.accent)(' │ ') +
-      chalk.hex(t.accent)('/help for commands');
+    const statusLine = [
+      chalk.hex(t.cyan)(` ◆ ${stats.episodicCount} events`),
+      chalk.hex(t.green)(` ◆ ${stats.taskCount} tasks`),
+      chalk.hex(t.primary)(` ◆ ${this.provider.providerName}`),
+      chalk.hex(t.accent)(` ◆ ${hotkey}`),
+      agentStr,
+      chalk.hex(t.dim)(` │ /help`)
+    ].join('');
+
+    const line = chalk.hex(t.primary)('═'.repeat(termW));
+    return line + '\n' + statusLine;
   }
 
   // ─── RENDER NOTIFICATIONS ───
@@ -416,22 +471,71 @@ class OpenDesktopGUI {
   async start() {
     this.clearScreen();
 
-    // Show splash
     const t = this.getThemeColors();
     const aiName = this.config.get('ai.name', 'OpenDesktop');
     const userName = this.config.get('user.name', '');
     const hotkey = this.config.get('hotkey.key', 'ctrl+shift+space');
+    const termW = process.stdout.columns || 80;
+    const version = require('../../package.json').version;
 
-    console.log(boxen(
-      chalk.hex(t.primary)(`⚡ ${aiName} v1.0.0 — THE INTELLIGENCE AGENT ⚡\n\n`) +
-      chalk.hex('#00FFFF')('Not a dumb chatbot. A self-improving AI desktop agent.\n\n') +
-      chalk.hex(t.accent)('Provider: ') + this.provider.providerName + '\n' +
-      chalk.hex(t.accent)('Model: ') + this.provider.model + '\n' +
-      chalk.hex(t.accent)('Theme: ') + this.config.get('theme') + '\n' +
-      chalk.hex(t.accent)('Hotkey: ') + chalk.white.bold(hotkey) + '\n\n' +
-      chalk.hex('#888888')('Type naturally to chat | /help for commands | /page <name> for pages'),
-      { padding: 1, borderStyle: 'round', borderColor: 'red', title: `🤖 ${aiName}`, titleAlignment: 'center', float: 'center' }
-    ));
+    // ═══ EPIC HACKER SPLASH SCREEN ═══
+    const logo = [
+      ' ██████╗ ██████╗ ███████╗███╗   ██╗██████╗ ███████╗███████╗██╗  ██╗████████╗ ██████╗ ██████╗ ',
+      '██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝██╔═══██╗██╔══██╗',
+      '██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║  ██║█████╗  ███████╗█████╔╝    ██║   ██║   ██║██████╔╝',
+      '██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║   ██║   ██║██╔══██╗',
+      '╚██████╔╝██║     ███████╗██║ ╚████║██████╔╝███████╗███████║██║  ██╗   ██║   ╚██████╔╝██║  ██║',
+      ' ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝'
+    ];
+
+    // Center and render logo
+    for (const line of logo) {
+      const pad = Math.max(0, Math.floor((termW - line.length) / 2));
+      console.log(' '.repeat(pad) + chalk.hex(t.primary)(line));
+    }
+
+    // Subtitle
+    const subtitle = `[ v${version} ─ THE INTELLIGENCE AGENT ─ NOT A CHATBOT ]`;
+    const subPad = Math.max(0, Math.floor((termW - subtitle.length) / 2));
+    console.log('\n' + ' '.repeat(subPad) + chalk.hex(t.accent)(subtitle));
+
+    // Hacker info box
+    const boxContent = [
+      chalk.hex(t.cyan)('STATUS') + chalk.hex(t.primary)(' :: ') + chalk.hex(t.green)('OPERATIONAL'),
+      chalk.hex(t.cyan)('PROVIDER') + chalk.hex(t.primary)(' :: ') + chalk.white(this.provider.providerName),
+      chalk.hex(t.cyan)('MODEL') + chalk.hex(t.primary)(' :: ') + chalk.white(this.provider.model),
+      chalk.hex(t.cyan)('THEME') + chalk.hex(t.primary)(' :: ') + chalk.white(this.config.get('theme')),
+      chalk.hex(t.cyan)('HOST') + chalk.hex(t.primary)(' :: ') + chalk.white(os.hostname()),
+      chalk.hex(t.cyan)('PLATFORM') + chalk.hex(t.primary)(' :: ') + chalk.white(`${os.platform()} ${os.arch()}`),
+      userName ? chalk.hex(t.cyan)('OPERATOR') + chalk.hex(t.primary)(' :: ') + chalk.white(userName) : null,
+      chalk.hex(t.cyan)('HOTKEY') + chalk.hex(t.primary)(' :: ') + chalk.white.bold(hotkey)
+    ].filter(Boolean).join('\n');
+
+    console.log('\n' + this._center(this._hackerBox(boxContent, { title: 'SYSTEM STATUS', width: 55 }), termW));
+
+    // Capabilities box
+    const capContent = [
+      chalk.hex(t.green)('◆') + ' AI Chat & Reasoning          ' + chalk.hex(t.green)('◆') + ' Desktop Automation',
+      chalk.hex(t.green)('◆') + ' Web Search & Scraping         ' + chalk.hex(t.green)('◆') + ' Code Execution (35+ langs)',
+      chalk.hex(t.green)('◆') + ' Memory & Knowledge Graph      ' + chalk.hex(t.green)('◆') + ' Screen Vision & OCR',
+      chalk.hex(t.green)('◆') + ' Agent Orchestration           ' + chalk.hex(t.green)('◆') + ' IoT Device Control',
+      chalk.hex(t.green)('◆') + ' Self-Evolution Engine          ' + chalk.hex(t.green)('◆') + ' Voice Control (TTS/STT)',
+      chalk.hex(t.green)('◆') + ' 20 Messaging Platforms         ' + chalk.hex(t.green)('◆') + ' Social Media Automation',
+      chalk.hex(t.green)('◆') + ' API Gateway & Webhooks         ' + chalk.hex(t.green)('◆') + ' Model Training & Fine-tuning',
+      chalk.hex(t.green)('◆') + ' Code Intelligence              ' + chalk.hex(t.green)('◆') + ' Trust & Safety System',
+      chalk.hex(t.green)('◆') + ' Proactive Intelligence         ' + chalk.hex(t.green)('◆') + ' 18 Deployment Targets'
+    ].join('\n');
+
+    console.log('\n' + this._center(this._hackerBox(capContent, { title: 'CAPABILITIES', width: 65 }), termW));
+
+    // Commands hint
+    const hintContent = [
+      chalk.hex(t.accent)('Type naturally to interact │ ') + chalk.hex(t.primary)('/help') + chalk.hex(t.accent)(' for all commands'),
+      chalk.hex(t.accent)('Press ') + chalk.hex(t.primary)(hotkey) + chalk.hex(t.accent)(' anytime to summon │ ') + chalk.hex(t.primary)('/page <name>') + chalk.hex(t.accent)(' to navigate')
+    ].join('\n');
+
+    console.log('\n' + this._center(this._hackerBox(hintContent, { title: 'CONTROLS', width: 55 }), termW));
+    console.log('');
 
     await this.plugins.loadAll();
     if (this.config.get('persona.active')) this.persona.activatePersona(this.config.get('persona.active'));
@@ -495,10 +599,7 @@ Be helpful, concise, proactive. Use emojis. Current time: ${new Date().toISOStri
         this.memory.addEvent({ type: 'chat', user: trimmed, assistant: response });
         this.selfImprove.trackPerformance('responseTime', Date.now() - startTime);
 
-        console.log('\n' + boxen(chalk.hex(t.primary)('🤖 ') + chalk.white(response), {
-          padding: { left: 1, right: 1, top: 0, bottom: 0 },
-          borderStyle: 'round', borderColor: 'red', dimBorder: true
-        }) + '\n');
+        console.log('\n' + this._center(this._hackerBox(chalk.hex(t.primary)('◈ ') + chalk.white(response), { title: `${personaName} RESPONSE`, width: Math.min(termW - 4, 80) }), termW) + '\n');
       } catch (err) {
         spinner.stop();
         console.log(chalk.hex('#FF0000')(`\n  ❌ Error: ${err.message}\n`));
