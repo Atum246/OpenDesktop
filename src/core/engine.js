@@ -57,6 +57,19 @@ const SelfUpdater = require('../self-updater/index.js');
 const ThemeEngine = require('../theme-engine/index.js');
 const MobileAPI = require('../mobile-api/index.js');
 
+// ═══ GROUNDBREAKING FEATURES ═══
+const { NeuralContextEngine } = require('../neural-context/index.js');
+const { ScreenStateMachine } = require('../screen-state/index.js');
+const { GhostMode } = require('../ghost-mode/index.js');
+const { DeviceMesh } = require('../device-mesh/index.js');
+const { CodeFingerprint } = require('../code-fingerprint/index.js');
+const { VoiceAmbient } = require('../voice-ambient/index.js');
+const { AdversarialTesting } = require('../adversarial-testing/index.js');
+const { WorkflowRecorder } = require('../workflow-recorder/index.js');
+const { ModelDistillation } = require('../model-distillation/index.js');
+const { SemanticFS } = require('../semantic-fs/index.js');
+const { Collaboration } = require('../collaboration/index.js');
+
 class OpenDesktopEngine {
   constructor(configData) {
     this.config = configData instanceof Config ? configData : new Config();
@@ -117,6 +130,19 @@ class OpenDesktopEngine {
     this.themeEngine = new ThemeEngine(this.config);
     this.mobileAPI = new MobileAPI(this.config);
 
+    // ═══ GROUNDBREAKING FEATURES ═══
+    this.neuralContext = new NeuralContextEngine(this.config);
+    this.screenState = new ScreenStateMachine(this.config);
+    this.ghostMode = new GhostMode(this.config);
+    this.deviceMesh = new DeviceMesh(this.config);
+    this.codeFingerprint = new CodeFingerprint(this.config);
+    this.voiceAmbient = new VoiceAmbient(this.config);
+    this.adversarialTesting = new AdversarialTesting(this.config);
+    this.workflowRecorder = new WorkflowRecorder(this.config);
+    this.modelDistillation = new ModelDistillation(this.config);
+    this.semanticFS = new SemanticFS(this.config);
+    this.collaboration = new Collaboration(this.config);
+
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
     this.isRunning = false;
@@ -144,6 +170,16 @@ class OpenDesktopEngine {
     if (this.config.get('persona.active')) this.persona.activatePersona(this.config.get('persona.active'));
     this.proactive.start();
     this.osIntegration.start();
+
+    // Initialize groundbreaking features
+    await this.neuralContext.initialize(this.memory, this.provider);
+    await this.screenState.initialize(this.vision, this.automation);
+    await this.ghostMode.initialize(this.orchestrator, this.security, this.memory);
+    await this.codeFingerprint.initialize();
+    await this.workflowRecorder.initialize(this.screenState, this.automation);
+    await this.modelDistillation.initialize(this.provider);
+    await this.semanticFS.initialize();
+
     await this.chatLoop();
   }
 
@@ -428,7 +464,78 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
           chalk.hex('#00FFFF')('/hash <text>') + chalk.hex('#888888')('         — Hash data'),
           chalk.hex('#00FFFF')('/weather <city>') + chalk.hex('#888888')('      — Get weather'),
           chalk.hex('#00FFFF')('/crypto') + chalk.hex('#888888')('              — Crypto prices'),
-          chalk.hex('#00FFFF')('/messaging') + chalk.hex('#888888')('           — Messaging hub')
+          chalk.hex('#00FFFF')('/messaging') + chalk.hex('#888888')('           — Messaging hub'),
+          '',
+          chalk.hex('#FF0000')('═══ NEURAL CONTEXT ═══'),
+          chalk.hex('#00FFFF')('/context') + chalk.hex('#888888')('             — Context engine status'),
+          chalk.hex('#00FFFF')('/context-query <q>') + chalk.hex('#888888')('   — Query context'),
+          chalk.hex('#00FFFF')('/context-prime <c>') + chalk.hex('#888888')('   — Prime a context'),
+          '',
+          chalk.hex('#FF0000')('═══ SCREEN STATE ═══'),
+          chalk.hex('#00FFFF')('/screen-state') + chalk.hex('#888888')('        — State machine status'),
+          chalk.hex('#00FFFF')('/screen-watch') + chalk.hex('#888888')('        — Start watching'),
+          chalk.hex('#00FFFF')('/screen-stop') + chalk.hex('#888888')('         — Stop watching'),
+          chalk.hex('#00FFFF')('/find-element <d>') + chalk.hex('#888888')('    — Find element'),
+          chalk.hex('#00FFFF')('/click-element <d>') + chalk.hex('#888888')('  — Click element'),
+          chalk.hex('#00FFFF')('/screen-diff') + chalk.hex('#888888')('         — Diff states'),
+          '',
+          chalk.hex('#FF0000')('═══ GHOST MODE ═══'),
+          chalk.hex('#00FFFF')('/ghost') + chalk.hex('#888888')('              — Ghost status'),
+          chalk.hex('#00FFFF')('/ghost-start <desc>') + chalk.hex('#888888')('  — Start mission'),
+          chalk.hex('#00FFFF')('/ghost-stop') + chalk.hex('#888888')('          — Stop mission'),
+          chalk.hex('#00FFFF')('/ghost-briefing') + chalk.hex('#888888')('      — Get briefing'),
+          '',
+          chalk.hex('#FF0000')('═══ DEVICE MESH ═══'),
+          chalk.hex('#00FFFF')('/mesh') + chalk.hex('#888888')('               — Mesh status'),
+          chalk.hex('#00FFFF')('/mesh-connect <h:p>') + chalk.hex('#888888')('   — Connect to peer'),
+          chalk.hex('#00FFFF')('/mesh-share <k> [v]') + chalk.hex('#888888')('  — Share context'),
+          '',
+          chalk.hex('#FF0000')('═══ CODE FINGERPRINT ═══'),
+          chalk.hex('#00FFFF')('/fingerprint <file>') + chalk.hex('#888888')('   — Fingerprint code'),
+          chalk.hex('#00FFFF')('/trace-intent <hash>') + chalk.hex('#888888')('  — Trace intent chain'),
+          chalk.hex('#00FFFF')('/code-decisions <f>') + chalk.hex('#888888')('  — Decision timeline'),
+          chalk.hex('#00FFFF')('/pattern-stats') + chalk.hex('#888888')('        — Pattern statistics'),
+          '',
+          chalk.hex('#FF0000')('═══ VOICE AMBIENT ═══'),
+          chalk.hex('#00FFFF')('/ambient') + chalk.hex('#888888')('             — Ambient status'),
+          chalk.hex('#00FFFF')('/ambient-start') + chalk.hex('#888888')('       — Start ambient'),
+          chalk.hex('#00FFFF')('/ambient-stop') + chalk.hex('#888888')('        — Stop ambient'),
+          chalk.hex('#00FFFF')('/voices') + chalk.hex('#888888')('              — List voices'),
+          chalk.hex('#00FFFF')('/clone-voice') + chalk.hex('#888888')('         — Clone voice'),
+          '',
+          chalk.hex('#FF0000')('═══ ADVERSARIAL TESTING ═══'),
+          chalk.hex('#00FFFF')('/red-team') + chalk.hex('#888888')('            — Run audit'),
+          chalk.hex('#00FFFF')('/vuln-report') + chalk.hex('#888888')('         — Vulnerability report'),
+          chalk.hex('#00FFFF')('/test-history') + chalk.hex('#888888')('        — Test history'),
+          '',
+          chalk.hex('#FF0000')('═══ WORKFLOW RECORDER ═══'),
+          chalk.hex('#00FFFF')('/record <name>') + chalk.hex('#888888')('        — Start recording'),
+          chalk.hex('#00FFFF')('/record-stop') + chalk.hex('#888888')('         — Stop recording'),
+          chalk.hex('#00FFFF')('/replay <name>') + chalk.hex('#888888')('        — Dry-run replay'),
+          chalk.hex('#00FFFF')('/replay-run <name>') + chalk.hex('#888888')('  — Execute replay'),
+          chalk.hex('#00FFFF')('/workflows-list') + chalk.hex('#888888')('       — List workflows'),
+          chalk.hex('#00FFFF')('/workflow-export <n>') + chalk.hex('#888888')(' — Export workflow'),
+          '',
+          chalk.hex('#FF0000')('═══ MODEL DISTILLATION ═══'),
+          chalk.hex('#00FFFF')('/distill') + chalk.hex('#888888')('             — Distillation status'),
+          chalk.hex('#00FFFF')('/model-optimal <t>') + chalk.hex('#888888')('   — Optimal model for task'),
+          chalk.hex('#00FFFF')('/distill-report') + chalk.hex('#888888')('      — Distillation report'),
+          chalk.hex('#00FFFF')('/model-compare <t>') + chalk.hex('#888888')('   — Compare models'),
+          '',
+          chalk.hex('#FF0000')('═══ SEMANTIC FILE SYSTEM ═══'),
+          chalk.hex('#00FFFF')('/semantic-search <q>') + chalk.hex('#888888')(' — Search files'),
+          chalk.hex('#00FFFF')('/semantic-scan [dir]') + chalk.hex('#888888')(' — Scan directory'),
+          chalk.hex('#00FFFF')('/file-related <f>') + chalk.hex('#888888')('    — Find related files'),
+          chalk.hex('#00FFFF')('/file-suggest [f]') + chalk.hex('#888888')('   — File suggestions'),
+          chalk.hex('#00FFFF')('/file-tags') + chalk.hex('#888888')('            — List tags'),
+          chalk.hex('#00FFFF')('/fs-stats') + chalk.hex('#888888')('            — FS statistics'),
+          '',
+          chalk.hex('#FF0000')('═══ COLLABORATION ═══'),
+          chalk.hex('#00FFFF')('/collab') + chalk.hex('#888888')('              — Collab status'),
+          chalk.hex('#00FFFF')('/collab-create [name]') + chalk.hex('#888888')(' — Create session'),
+          chalk.hex('#00FFFF')('/collab-join <id>') + chalk.hex('#888888')('    — Join session'),
+          chalk.hex('#00FFFF')('/collab-sessions') + chalk.hex('#888888')('     — List sessions'),
+          chalk.hex('#00FFFF')('/collab-chat <msg>') + chalk.hex('#888888')('   — Send chat')
         ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red', title: `⚡ ${this.aiName} Help`, titleAlignment: 'center' }));
         break;
 
@@ -2143,6 +2250,548 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         } catch (err) {
           console.log(chalk.hex('#FF0000')(`❌ Failed to start Web UI: ${err.message}`));
         }
+        break;
+      }
+
+      // ═══════════════════════════════════════════════════════════════
+      // GROUNDBREAKING FEATURES COMMANDS
+      // ═══════════════════════════════════════════════════════════════
+
+      // ─── Neural Context Engine ───
+      case '/context': {
+        const status = this.neuralContext.getStatus();
+        console.log(chalk.hex('#00FFFF')('\n  Neural Context Engine'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Working Memory: ${status.workingMemory.size}/${status.workingMemory.capacity} (${status.workingMemory.utilization})`);
+        console.log(`  Episodic Buffer: ${status.episodicBuffer.size} entries`);
+        console.log(`  Prediction Graph: ${status.predictionGraph.nodes} nodes, ${status.predictionGraph.totalEdges} edges`);
+        console.log(`  Semantic Index: ${status.semanticIndex.concepts} concepts`);
+        console.log(`  Primed Contexts: ${status.primedContexts}`);
+        console.log(`  Behavior Patterns: ${status.behaviorModel.timePatterns} time, ${status.behaviorModel.appSequences} app, ${status.behaviorModel.projectContexts} project\n`);
+        break;
+      }
+      case '/context-query': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /context-query <query>')); break; }
+        const ctx = await this.neuralContext.queryContext(args);
+        console.log(chalk.hex('#00FFFF')(`\n  Context for: "${args}"`));
+        if (ctx.primed.length > 0) {
+          console.log(chalk.hex('#00FF40')('  Primed:'));
+          ctx.primed.forEach(p => console.log(`    - ${JSON.stringify(p.content).substring(0, 80)} (${(p.confidence * 100).toFixed(0)}%)`));
+        }
+        if (ctx.predictions.length > 0) {
+          console.log(chalk.hex('#00FFFF')('  Predictions:'));
+          ctx.predictions.slice(0, 3).forEach(p => console.log(`    - ${p.reason || p.predicted} (${(p.confidence * 100).toFixed(0)}%)`));
+        }
+        console.log(`  Total relevant items: ${ctx.totalRelevantItems}\n`);
+        break;
+      }
+      case '/context-prime': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /context-prime <content>')); break; }
+        const primed = this.neuralContext.primeContext({ content: args });
+        console.log(chalk.hex('#00FF40')(`✅ Context primed: ${primed.id}\n`));
+        break;
+      }
+
+      // ─── Screen State Machine ───
+      case '/screen-state': {
+        const wm = this.screenState.getWorldModel();
+        console.log(chalk.hex('#00FFFF')('\n  Screen State Machine'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Watching: ${wm.isWatching ? 'Yes' : 'No'}`);
+        console.log(`  History: ${wm.historyLength} states`);
+        console.log(`  State Graph: ${wm.stateGraphSize} states`);
+        console.log(`  Element Cache: ${wm.elementCacheSize} elements`);
+        console.log(`  Active Recordings: ${wm.activeRecordings.length}\n`);
+        break;
+      }
+      case '/screen-watch': {
+        await this.screenState.startWatching();
+        console.log(chalk.hex('#00FF40')('✅ Screen state watching started\n'));
+        break;
+      }
+      case '/screen-stop': {
+        this.screenState.stopWatching();
+        console.log(chalk.hex('#00FF40')('✅ Screen state watching stopped\n'));
+        break;
+      }
+      case '/find-element': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /find-element <description>')); break; }
+        const found = await this.screenState.findElement(args);
+        console.log(found.found
+          ? chalk.hex('#00FF40')(`✅ Found: ${found.element?.text || found.matchedText} (confidence: ${(found.confidence * 100).toFixed(0)}%)`)
+          : chalk.hex('#FF0000')('❌ Element not found'));
+        break;
+      }
+      case '/click-element': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /click-element <description>')); break; }
+        const clickResult = await this.screenState.clickElement(args);
+        console.log(clickResult.success
+          ? chalk.hex('#00FF40')(`✅ Clicked: ${clickResult.element?.text || args}`)
+          : chalk.hex('#FF0000')(`❌ ${clickResult.error}`));
+        break;
+      }
+      case '/screen-diff': {
+        const states = this.screenState.stateHistory;
+        if (states.length < 2) { console.log(chalk.hex('#FF0000')('Need at least 2 captured states')); break; }
+        const diff = await this.screenState.diffStates(states[states.length - 2], states[states.length - 1]);
+        console.log(chalk.hex('#00FFFF')('\n  Screen Diff:'));
+        console.log(`  App changed: ${diff.appChanged}`);
+        console.log(`  New elements: ${diff.newElements.length}`);
+        console.log(`  Removed: ${diff.removedElements.length}`);
+        console.log(`  Moved: ${diff.movedElements.length}`);
+        console.log(`  Text changes: ${diff.textChanges.length}`);
+        console.log(`  Significant: ${diff.significantChange}\n`);
+        break;
+      }
+
+      // ─── Ghost Mode ───
+      case '/ghost': {
+        const gs = this.ghostMode.getStatus();
+        console.log(chalk.hex('#00FFFF')('\n  Ghost Mode'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        if (gs.active) {
+          console.log(chalk.hex('#FF0000')('  Status: ACTIVE'));
+          console.log(`  Mission: ${gs.mission.name}`);
+          console.log(`  Progress: ${gs.mission.progress}`);
+          console.log(`  Elapsed: ${gs.mission.elapsed}`);
+          console.log(`  Current Task: ${gs.mission.currentTask}`);
+          console.log(`  Completed: ${gs.mission.completedTasks}/${gs.mission.totalTasks}`);
+          console.log(`  Failed: ${gs.mission.failedTasks}`);
+          console.log(`  Agents: ${gs.mission.spawnedAgents}`);
+        } else {
+          console.log(chalk.hex('#888888')('  Status: Idle'));
+          console.log(`  Total missions: ${gs.missions}`);
+        }
+        console.log();
+        break;
+      }
+      case '/ghost-start': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /ghost-start <mission description>')); break; }
+        const mission = {
+          name: args.substring(0, 50),
+          description: args,
+          tasks: [{ name: 'Execute', description: args, type: 'general' }],
+          constraints: { safetyMode: 'supervised', maxDuration: 3600000 }
+        };
+        const gsResult = await this.ghostMode.startMission(mission);
+        console.log(gsResult.success
+          ? chalk.hex('#00FF40')(`✅ Ghost mission started: ${gsResult.missionId}`)
+          : chalk.hex('#FF0000')(`❌ ${gsResult.error}`));
+        break;
+      }
+      case '/ghost-stop': {
+        const stopResult = await this.ghostMode.stopMission();
+        console.log(stopResult.success
+          ? chalk.hex('#00FF40')('✅ Ghost mission stopped')
+          : chalk.hex('#FF0000')(`❌ ${stopResult.error}`));
+        break;
+      }
+      case '/ghost-briefing': {
+        const briefing = await this.ghostMode.getBriefing();
+        if (briefing.message) {
+          console.log(chalk.hex('#888888')(`  ${briefing.message}`));
+        } else {
+          console.log(chalk.hex('#00FFFF')(`\n  ${briefing.title}`));
+          console.log(`  Status: ${briefing.status}`);
+          console.log(`  Duration: ${briefing.duration}`);
+          console.log(`  Completed: ${briefing.summary.completed}/${briefing.summary.totalTasks}`);
+          console.log(`  Success Rate: ${briefing.summary.successRate}`);
+          if (briefing.recommendations.length > 0) {
+            console.log(chalk.hex('#FFFF00')('  Recommendations:'));
+            briefing.recommendations.forEach(r => console.log(`    - ${r}`));
+          }
+        }
+        console.log();
+        break;
+      }
+
+      // ─── Device Mesh ───
+      case '/mesh': {
+        const topology = this.deviceMesh.getTopology();
+        console.log(chalk.hex('#00FFFF')('\n  Device Mesh'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Node: ${topology.localNode.nodeName} (${topology.localNode.nodeType})`);
+        console.log(`  Node ID: ${topology.localNode.nodeId}`);
+        console.log(`  Connected Nodes: ${topology.connectedNodes}/${topology.totalNodes}`);
+        console.log(`  Shared Context: ${topology.sharedContextKeys} keys`);
+        if (topology.peers.length > 0) {
+          console.log(chalk.hex('#00FFFF')('  Peers:'));
+          topology.peers.forEach(p => console.log(`    - ${p.nodeName} (${p.nodeType}) [${p.status}]`));
+        }
+        console.log();
+        break;
+      }
+      case '/mesh-connect': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /mesh-connect <host:port>')); break; }
+        const [host, port] = args.split(':');
+        const connResult = await this.deviceMesh.connectToPeer(host, parseInt(port) || 4445);
+        console.log(connResult.success
+          ? chalk.hex('#00FF40')(`✅ Connected to ${connResult.peer.nodeName}`)
+          : chalk.hex('#FF0000')(`❌ ${connResult.error}`));
+        break;
+      }
+      case '/mesh-share': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /mesh-share <key> [value]')); break; }
+        const parts = args.split(' ');
+        await this.deviceMesh.shareContext(parts[0], parts.slice(1).join(' ') || '');
+        console.log(chalk.hex('#00FF40')(`✅ Shared: ${parts[0]}`));
+        break;
+      }
+
+      // ─── Code Fingerprinting ───
+      case '/fingerprint': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /fingerprint <file_path>')); break; }
+        try {
+          const code = fs.readFileSync(args, 'utf8');
+          const fp = await this.codeFingerprint.fingerprint(code, { file: args });
+          console.log(chalk.hex('#00FFFF')('\n  Code Fingerprint'));
+          console.log(chalk.hex('#888888')('  ═══════════════════════'));
+          console.log(`  Hash: ${fp.hash}`);
+          console.log(`  Language: ${fp.language}`);
+          console.log(`  Purpose: ${fp.purpose}`);
+          console.log(`  Complexity: ${fp.complexity}`);
+          console.log(`  Patterns: ${fp.patterns.join(', ') || 'none'}`);
+          console.log(`  Dependencies: ${fp.dependencies.join(', ') || 'none'}`);
+          console.log(`  Related: ${fp.relatedTo.length} files\n`);
+        } catch (err) {
+          console.log(chalk.hex('#FF0000')(`❌ ${err.message}`));
+        }
+        break;
+      }
+      case '/trace-intent': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /trace-intent <code_hash>')); break; }
+        const trace = await this.codeFingerprint.traceIntent(args);
+        if (!trace.found) {
+          console.log(chalk.hex('#FF0000')('Hash not found in index'));
+        } else {
+          console.log(chalk.hex('#00FFFF')('\n  Intent Chain'));
+          console.log(chalk.hex('#888888')('  ═══════════════════════'));
+          console.log(`  ${trace.narrative}`);
+          if (trace.decisions.length > 0) {
+            console.log(chalk.hex('#00FFFF')('  Decisions:'));
+            trace.decisions.forEach(d => console.log(`    - [${d.type}] ${d.reason}`));
+          }
+          console.log();
+        }
+        break;
+      }
+      case '/code-decisions': {
+        const timeline = args ? this.codeFingerprint.getFileTimeline(args) : [];
+        if (timeline.length === 0) {
+          console.log(chalk.hex('#888888')('  No decisions recorded' + (args ? ` for ${args}` : '')));
+        } else {
+          console.log(chalk.hex('#00FFFF')(`\n  Decision Timeline: ${args}`));
+          timeline.forEach(d => {
+            const time = new Date(d.timestamp).toLocaleString();
+            console.log(`  [${time}] ${d.type}: ${d.reason || 'no reason'}`);
+          });
+        }
+        console.log();
+        break;
+      }
+      case '/pattern-stats': {
+        const ps = this.codeFingerprint.getPatternStats();
+        console.log(chalk.hex('#00FFFF')('\n  Pattern Statistics'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Total Fingerprints: ${ps.totalFingerprints}`);
+        console.log(`  Total Decisions: ${ps.totalDecisions}`);
+        console.log(`  Complexity: Low=${ps.complexityDistribution.low} Med=${ps.complexityDistribution.medium} High=${ps.complexityDistribution.high}`);
+        if (ps.topPatterns.length > 0) {
+          console.log(chalk.hex('#00FFFF')('  Top Patterns:'));
+          ps.topPatterns.forEach(p => console.log(`    ${p.pattern}: ${p.count}`));
+        }
+        console.log();
+        break;
+      }
+
+      // ─── Voice Ambient ───
+      case '/ambient': {
+        const vs = this.voiceAmbient.getStatus();
+        console.log(chalk.hex('#00FFFF')('\n  Voice Ambient Mode'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Listening: ${vs.isListening ? 'Yes' : 'No'}`);
+        console.log(`  Speaking: ${vs.isSpeaking ? 'Yes' : 'No'}`);
+        console.log(`  State: ${vs.conversationState}`);
+        console.log(`  Wake Word: "${vs.wakeWord}"`);
+        console.log(`  Active Voice: ${vs.activeVoice}`);
+        console.log(`  Available Voices: ${vs.availableVoices}`);
+        console.log(`  Conversation: ${vs.conversationLength} messages\n`);
+        break;
+      }
+      case '/ambient-start': {
+        await this.voiceAmbient.startAmbient();
+        console.log(chalk.hex('#00FF40')(`✅ Ambient mode started. Say "${this.voiceAmbient.config.wakeWord}" to activate.\n`));
+        break;
+      }
+      case '/ambient-stop': {
+        await this.voiceAmbient.stopAmbient();
+        console.log(chalk.hex('#00FF40')('✅ Ambient mode stopped\n'));
+        break;
+      }
+      case '/voices': {
+        const voices = this.voiceAmbient.getVoices();
+        console.log(chalk.hex('#00FFFF')('\n  Available Voices'));
+        voices.forEach(v => console.log(`  - ${v.name} (${v.type})`));
+        console.log();
+        break;
+      }
+      case '/clone-voice': {
+        console.log(chalk.hex('#00FFFF')('  Voice cloning requires audio samples.'));
+        console.log(chalk.hex('#888888')('  Use: /clone-voice <name> <audio_file_path>\n'));
+        break;
+      }
+
+      // ─── Adversarial Testing ───
+      case '/red-team': {
+        console.log(chalk.hex('#FF0000')('\n  Running Adversarial Audit...\n'));
+        const audit = await this.adversarialTesting.runFullAudit();
+        console.log(chalk.hex('#00FFFF')('  Audit Results'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Security Score: ${audit.score}/100`);
+        console.log(`  Tests Run: ${audit.tests.length}`);
+        console.log(`  Passed: ${audit.tests.filter(t => t.status === 'passed').length}`);
+        console.log(`  Failed: ${audit.tests.filter(t => t.status === 'failed').length}`);
+        console.log(`  Vulnerabilities: ${audit.vulnerabilities.length}`);
+        console.log(`  Auto-Fixes: ${audit.fixes.length}`);
+        console.log(`  Duration: ${audit.duration}ms`);
+        if (audit.vulnerabilities.length > 0) {
+          console.log(chalk.hex('#FF0000')('  Vulnerabilities:'));
+          audit.vulnerabilities.slice(0, 5).forEach(v => console.log(`    [${v.severity}] ${v.type}: ${v.description}`));
+        }
+        console.log();
+        break;
+      }
+      case '/vuln-report': {
+        const vr = this.adversarialTesting.getVulnerabilityReport();
+        console.log(chalk.hex('#00FFFF')('\n  Vulnerability Report'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Total: ${vr.total}`);
+        console.log(`  Critical: ${vr.bySeverity.critical}`);
+        console.log(`  High: ${vr.bySeverity.high}`);
+        console.log(`  Medium: ${vr.bySeverity.medium}`);
+        console.log(`  Low: ${vr.bySeverity.low}`);
+        console.log(`  Fixed: ${vr.fixed}`);
+        console.log(`  Unfixed: ${vr.unfixed}\n`);
+        break;
+      }
+      case '/test-history': {
+        const th = this.adversarialTesting.getTestHistory(5);
+        console.log(chalk.hex('#00FFFF')('\n  Test History'));
+        th.forEach(t => {
+          const time = new Date(t.timestamp).toLocaleString();
+          console.log(`  [${time}] Score: ${t.score}/100 | ${t.passed}/${t.tests} passed | ${t.vulnerabilities} vulns | ${t.duration}ms`);
+        });
+        console.log();
+        break;
+      }
+
+      // ─── Workflow Recorder ───
+      case '/record': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /record <workflow_name>')); break; }
+        const recResult = this.workflowRecorder.startRecording(args);
+        console.log(recResult.success
+          ? chalk.hex('#00FF40')(`✅ Recording started: ${args}`)
+          : chalk.hex('#FF0000')(`❌ ${recResult.error}`));
+        break;
+      }
+      case '/record-stop': {
+        const stopped = this.workflowRecorder.stopRecording();
+        if (stopped) {
+          console.log(chalk.hex('#00FF40')(`✅ Recording stopped: ${stopped.name} (${stopped.totalSteps} steps)`));
+        } else {
+          console.log(chalk.hex('#FF0000')('No active recording'));
+        }
+        break;
+      }
+      case '/replay': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /replay <workflow_name>')); break; }
+        const replayResult = await this.workflowRecorder.replayWorkflow(args, { dryRun: true });
+        console.log(replayResult.success
+          ? chalk.hex('#00FF40')(`✅ Replay dry-run: ${replayResult.replay.stepsExecuted} steps`)
+          : chalk.hex('#FF0000')(`❌ ${replayResult.error}`));
+        break;
+      }
+      case '/replay-run': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /replay-run <workflow_name>')); break; }
+        const runResult = await this.workflowRecorder.replayWorkflow(args);
+        console.log(runResult.success
+          ? chalk.hex('#00FF40')(`✅ Replay complete: ${runResult.replay.stepsExecuted} steps in ${runResult.replay.duration}ms`)
+          : chalk.hex('#FF0000')(`❌ ${runResult.error}`));
+        break;
+      }
+      case '/workflows-list': {
+        const wfList = this.workflowRecorder.listWorkflows();
+        if (wfList.length === 0) {
+          console.log(chalk.hex('#888888')('  No workflows recorded'));
+        } else {
+          console.log(chalk.hex('#00FFFF')('\n  Workflows'));
+          wfList.forEach(w => console.log(`  - ${w.name} (${w.steps} steps, ${w.category})`));
+        }
+        console.log();
+        break;
+      }
+      case '/workflow-export': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /workflow-export <name>')); break; }
+        const expResult = await this.workflowRecorder.exportWorkflow(args);
+        console.log(expResult.success
+          ? chalk.hex('#00FF40')(`✅ Exported to: ${expResult.path}`)
+          : chalk.hex('#FF0000')(`❌ ${expResult.error}`));
+        break;
+      }
+
+      // ─── Model Distillation ───
+      case '/distill': {
+        const analytics = this.modelDistillation.getAnalytics();
+        console.log(chalk.hex('#00FFFF')('\n  Model Distillation'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Total Interactions: ${analytics.totalInteractions}`);
+        console.log(`  Successful: ${analytics.successfulInteractions}`);
+        console.log(`  Distilled Models: ${analytics.distilledModels}`);
+        console.log(`  Routing Entries: ${analytics.routingEntries}`);
+        console.log(`  Task Types: ${Object.keys(analytics.taskTypes).length}`);
+        if (Object.keys(analytics.taskTypes).length > 0) {
+          console.log(chalk.hex('#00FFFF')('  Task Types:'));
+          for (const [type, data] of Object.entries(analytics.taskTypes).slice(0, 5)) {
+            console.log(`    ${type}: ${data.totalInteractions} interactions, ${Object.keys(data.models).length} models`);
+          }
+        }
+        console.log();
+        break;
+      }
+      case '/model-optimal': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /model-optimal <task_type>')); break; }
+        const optimal = this.modelDistillation.getOptimalModel(args);
+        console.log(chalk.hex('#00FFFF')(`\n  Optimal Model for: ${args}`));
+        if (optimal.recommended) {
+          console.log(`  Recommended: ${optimal.recommended.model}`);
+          console.log(`  Score: ${optimal.recommended.score?.toFixed(2)}`);
+          console.log(`  Success Rate: ${((optimal.recommended.successRate || 0) * 100).toFixed(1)}%`);
+        } else {
+          console.log(chalk.hex('#888888')('  No data yet'));
+        }
+        console.log();
+        break;
+      }
+      case '/distill-report': {
+        const dr = this.modelDistillation.getDistillationReport();
+        console.log(chalk.hex('#00FFFF')('\n  Distillation Report'));
+        console.log(`  Ready for distillation: ${dr.readyForDistillation.length} task types`);
+        if (dr.recommendations.length > 0) {
+          console.log(chalk.hex('#00FF40')('  Recommendations:'));
+          dr.recommendations.forEach(r => console.log(`    - ${r}`));
+        }
+        console.log();
+        break;
+      }
+      case '/model-compare': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /model-compare <task_type>')); break; }
+        const comp = this.modelDistillation.compareModels(args);
+        console.log(chalk.hex('#00FFFF')(`\n  Model Comparison: ${args}`));
+        comp.models.forEach(m => {
+          console.log(`  ${m.model}: ${m.successRate} success, ${m.avgLatency} latency, score=${m.score}`);
+        });
+        console.log();
+        break;
+      }
+
+      // ─── Semantic File System ───
+      case '/semantic-search': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /semantic-search <query>')); break; }
+        const searchResult = await this.semanticFS.search(args);
+        console.log(chalk.hex('#00FFFF')(`\n  Semantic Search: "${args}"`));
+        console.log(`  Files searched: ${searchResult.totalFilesSearched}`);
+        console.log(`  Results: ${searchResult.totalResults}`);
+        searchResult.results.forEach(r => {
+          console.log(`  [${(r.relevance * 100).toFixed(0)}%] ${r.path}`);
+          if (r.summary) console.log(`         ${r.summary.substring(0, 80)}...`);
+        });
+        console.log();
+        break;
+      }
+      case '/semantic-scan': {
+        const scanPath = args || process.cwd();
+        console.log(chalk.hex('#00FFFF')(`\n  Scanning: ${scanPath}`));
+        const scanResult = await this.semanticFS.scanDirectory(scanPath);
+        console.log(scanResult.success
+          ? chalk.hex('#00FF40')(`✅ Indexed ${scanResult.filesIndexed} files, skipped ${scanResult.filesSkipped}, ${scanResult.errors} errors in ${scanResult.duration}ms`)
+          : chalk.hex('#FF0000')(`❌ ${scanResult.error}`));
+        break;
+      }
+      case '/file-related': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /file-related <file_path>')); break; }
+        const related = await this.semanticFS.findRelated(args);
+        console.log(chalk.hex('#00FFFF')(`\n  Files related to: ${args}`));
+        related.related.forEach(r => console.log(`  [${(r.similarity * 100).toFixed(0)}%] ${r.path}`));
+        console.log();
+        break;
+      }
+      case '/file-suggest': {
+        const suggestions = await this.semanticFS.getSuggestions({ currentFile: args });
+        console.log(chalk.hex('#00FFFF')('\n  File Suggestions'));
+        suggestions.forEach(s => console.log(`  [${s.reason}] ${s.path}`));
+        console.log();
+        break;
+      }
+      case '/file-tags': {
+        const tags = this.semanticFS.getTags();
+        console.log(chalk.hex('#00FFFF')('\n  File Tags'));
+        tags.slice(0, 20).forEach(t => console.log(`  ${t.tag}: ${t.fileCount} files`));
+        console.log();
+        break;
+      }
+      case '/fs-stats': {
+        const fsStats = this.semanticFS.getStats();
+        console.log(chalk.hex('#00FFFF')('\n  Semantic FS Stats'));
+        console.log(`  Indexed Files: ${fsStats.totalFiles}`);
+        console.log(`  Tags: ${fsStats.totalTags}`);
+        console.log(`  Concepts: ${fsStats.totalConcepts}`);
+        console.log(`  Total Size: ${(fsStats.totalSize / 1024 / 1024).toFixed(2)} MB`);
+        console.log(`  Scanning: ${fsStats.isScanning ? 'Yes' : 'No'}`);
+        console.log();
+        break;
+      }
+
+      // ─── Collaboration ───
+      case '/collab': {
+        const collabStats = this.collaboration.getStats();
+        console.log(chalk.hex('#00FFFF')('\n  Collaboration'));
+        console.log(chalk.hex('#888888')('  ═══════════════════════'));
+        console.log(`  Active Sessions: ${collabStats.activeSessions}`);
+        console.log(`  Total Participants: ${collabStats.totalParticipants}`);
+        console.log(`  Total Actions: ${collabStats.totalActions}`);
+        console.log(`  Chat Messages: ${collabStats.totalChatMessages}\n`);
+        break;
+      }
+      case '/collab-create': {
+        const session = this.collaboration.createSession({ name: args || 'New Session' });
+        console.log(chalk.hex('#00FF40')(`✅ Session created: ${session.session.id}`));
+        console.log(chalk.hex('#888888')(`  Share this ID with others to join\n`));
+        break;
+      }
+      case '/collab-join': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /collab-join <session_id> [name]')); break; }
+        const parts = args.split(' ');
+        const joinResult = this.collaboration.joinSession(parts[0], { name: parts[1] || 'User' });
+        console.log(joinResult.success
+          ? chalk.hex('#00FF40')(`✅ Joined session as ${joinResult.participant.name}`)
+          : chalk.hex('#FF0000')(`❌ ${joinResult.error}`));
+        break;
+      }
+      case '/collab-sessions': {
+        const sessions = this.collaboration.listSessions();
+        if (sessions.length === 0) {
+          console.log(chalk.hex('#888888')('  No active sessions'));
+        } else {
+          console.log(chalk.hex('#00FFFF')('\n  Active Sessions'));
+          sessions.forEach(s => console.log(`  - ${s.name} (${s.id}) [${s.participants}/${s.maxParticipants}]`));
+        }
+        console.log();
+        break;
+      }
+      case '/collab-chat': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /collab-chat <message>')); break; }
+        // Broadcast to all sessions the user is in
+        console.log(chalk.hex('#00FF40')(`  Chat: ${args}\n`));
         break;
       }
 

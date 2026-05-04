@@ -201,12 +201,14 @@
 
     .hero-logo-text {
       font-family: var(--font-mono);
-      font-size: clamp(48px, 8vw, 96px);
+      font-size: clamp(36px, 8vw, 96px);
       font-weight: 700;
-      line-height: 1;
+      line-height: 1.1;
       letter-spacing: -3px;
       margin-bottom: 8px;
       color: var(--white);
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .hero-logo-text .open {
@@ -275,6 +277,8 @@
       font-size: 14px;
       line-height: 1.8;
       min-height: 200px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     .terminal-line {
@@ -721,15 +725,45 @@
     }
 
     @media (max-width: 768px) {
-      nav { padding: 0 24px; }
+      nav { padding: 0 16px; }
       .nav-links { display: none; }
-      .hero { padding: 100px 24px 60px; }
-      section { padding: 60px 24px; }
-      .features-grid { grid-template-columns: 1fr; }
+      .nav-actions { gap: 6px; }
+      .nav-actions .btn-ghost span { display: none; }
+      .hero { padding: 80px 16px 40px; }
+      .hero-logo-text { letter-spacing: -1px; font-size: clamp(28px, 10vw, 56px); }
+      .hero-subtitle { font-size: 13px; margin-bottom: 24px; }
+      .terminal-hero { margin-top: 24px; }
+      .terminal-body { padding: 12px; font-size: 10px; line-height: 1.5; overflow-x: auto; }
+      .terminal-body .terminal-line { white-space: nowrap; }
+      section { padding: 40px 16px; }
+      .features-grid { grid-template-columns: 1fr; gap: 1px; }
+      .feature-card { padding: 20px; }
       .stats-bar { flex-direction: column; }
-      .stat-item { padding: 24px; }
-      footer { flex-direction: column; gap: 24px; text-align: center; }
-      .hero-logo-text { letter-spacing: -1px; }
+      .stat-item { padding: 16px; }
+      .stat-number { font-size: 24px; }
+      .commands-grid { grid-template-columns: 1fr; }
+      .command-group { padding: 16px; }
+      .install-grid { grid-template-columns: 1fr; }
+      .install-code { font-size: 11px; padding: 12px; }
+      .providers-grid { grid-template-columns: repeat(2, 1fr); }
+      .provider-item { padding: 12px; font-size: 11px; }
+      .arch-terminal .terminal-body { font-size: 10px; }
+      .cta-title { font-size: 28px; }
+      .cta-buttons { flex-direction: column; align-items: center; }
+      .btn-large { width: 100%; max-width: 300px; justify-content: center; }
+      footer { flex-direction: column; gap: 16px; text-align: center; padding: 24px 16px; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+      .section-title { font-size: 24px; }
+      .section-desc { font-size: 14px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-logo-text { font-size: 28px; letter-spacing: -0.5px; }
+      .hero-badge { font-size: 10px; padding: 4px 10px; }
+      .terminal-body { font-size: 9px; padding: 8px; }
+      .providers-grid { grid-template-columns: 1fr; }
+      .feature-title { font-size: 13px; }
+      .feature-desc { font-size: 12px; }
     }
 
     /* ==================== GLOW EFFECTS ==================== */
