@@ -6,35 +6,28 @@
 
 **Your computer, controlled by AI. Voice. Vision. Automation. Memory. 50+ AI Providers.**
 
-[![npm version](https://img.shields.io/npm/v/opendesktop.svg)](https://www.npmjs.com/package/opendesktop)
+[![npm version](https://img.shields.io/npm/v/opendesktop-ai.svg)](https://www.npmjs.com/package/opendesktop-ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-blue.svg)]()
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)]()
-
----
+[![Tests](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)]()
 
 ```
-  ┌─────────────────────────────────────────────────────────────┐
-  │                                                             │
-  │     ██████╗ ██████╗ ███████╗███╗   ██╗██████╗ ███████╗     │
-  │    ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔════╝     │
-  │    ██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║  ██║█████╗       │
-  │    ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝       │
-  │    ╚██████╔╝██║     ███████╗██║ ╚████║██████╔╝███████╗     │
-  │     ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝     │
-  │              ██████╗ ███████╗███████╗██╗  ██╗████████╗      │
-  │              ██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝      │
-  │              ██║  ██║█████╗  ███████╗█████╔╝    ██║         │
-  │              ██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║         │
-  │              ██████╔╝███████╗███████║██║  ██╗   ██║         │
-  │              ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝         │
-  │                                                             │
-  └─────────────────────────────────────────────────────────────┘
+  ╔═══════════════════════════════════════════════════════════════╗
+  ║                                                               ║
+  ║    ██████╗ ██████╗ ███████╗███╗   ██╗██████╗ ███████╗███████╗║
+  ║   ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔════╝██╔════╝║
+  ║   ██║   ██║██████╔╝█████╗  ██╔██╗ ██║██║  ██║█████╗  ███████╗║
+  ║   ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ╚════██║║
+  ║   ╚██████╔╝██║     ███████╗██║ ╚████║██████╔╝███████╗███████║║
+  ║    ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚══════╝║
+  ║                                                               ║
+  ╚═══════════════════════════════════════════════════════════════╝
 ```
-
----
 
 </div>
+
+---
 
 ## 🚀 What is OpenDesktop?
 
@@ -46,35 +39,23 @@ OpenDesktop is an **open-source AI desktop agent** that takes control of your co
 - 👁️ **See your screen** — take screenshots, analyze UI, read text (OCR)
 - 🎤 **Listen to your voice** — voice commands and dictation
 - 🧠 **Remember everything** — persistent memory that never forgets
-- 🔗 **Connect everything** — WiFi, Bluetooth, SSH, APIs
+- 💻 **Execute code** — 30+ programming languages
+- 🚀 **Deploy anywhere** — 18 deployment targets (Vercel, AWS, Docker, etc.)
+- 🧩 **Create skills** — build tools and plugins on the fly
+- 📋 **Automate workflows** — chain actions, schedule tasks
+- 🎭 **Custom personas** — give your AI a personality
+- 📈 **Learn over time** — gets smarter with every interaction
 - 💬 **Message you anywhere** — Telegram, Discord, WhatsApp, Slack
-- ⚡ **Automate anything** — schedule tasks, create workflows, run macros
+- ⌨️ **Summon with hotkey** — press a key, AI appears
 
 **Install it. Set it up. Press a key. It does the rest.**
-
----
-
-## 📋 Table of Contents
-
-- [Quick Start](#-quick-start)
-- [Installation](#-installation)
-- [Prerequisites](#-prerequisites)
-- [Features](#-features)
-- [AI Providers](#-ai-providers)
-- [Commands](#-commands)
-- [Configuration](#-configuration)
-- [Messaging Integration](#-messaging-integration)
-- [Plugin System](#-plugin-system)
-- [Architecture](#-architecture)
-- [Contributing](#-contributing)
-- [License](#-license)
 
 ---
 
 ## ⚡ Quick Start
 
 ```bash
-# Install via npm (recommended)
+# Install globally via npm
 npm install -g opendesktop-ai
 
 # Run setup wizard
@@ -100,23 +81,12 @@ curl -fsSL https://raw.githubusercontent.com/Atum246/OpenDesktop/main/install.sh
 
 ## 📦 Installation
 
-### Option 1: npm (Recommended)
-
+### npm (Recommended)
 ```bash
-npm install -g opendesktop
+npm install -g opendesktop-ai
 ```
 
-### Option 2: Install Script
-
-```bash
-# Download and run
-git clone https://github.com/Atum246/OpenDesktop.git
-cd OpenDesktop
-bash install.sh
-```
-
-### Option 3: Manual Install
-
+### From Source
 ```bash
 git clone https://github.com/Atum246/OpenDesktop.git
 cd OpenDesktop
@@ -124,42 +94,26 @@ npm install
 npm link
 ```
 
-### Platform-Specific Notes
+### Platform-Specific
 
 #### 🐧 Linux
-
 ```bash
-# Ubuntu/Debian
-sudo apt update && sudo apt install -y nodejs npm
-npm install -g opendesktop
-
-# Fedora
-sudo dnf install -y nodejs npm
-npm install -g opendesktop
-
-# Arch
-sudo pacman -S nodejs npm
-npm install -g opendesktop
+sudo apt update && sudo apt install -y nodejs npm  # Ubuntu/Debian
+sudo dnf install -y nodejs npm                      # Fedora
+sudo pacman -S nodejs npm                            # Arch
+npm install -g opendesktop-ai
 ```
 
 #### 🍎 macOS
-
 ```bash
-# Using Homebrew
 brew install node
-npm install -g opendesktop
+npm install -g opendesktop-ai
 ```
 
 #### 🪟 Windows
-
 ```powershell
-# Using winget
 winget install OpenJS.NodeJS.LTS
-npm install -g opendesktop
-
-# Or using Chocolatey
-choco install nodejs
-npm install -g opendesktop
+npm install -g opendesktop-ai
 ```
 
 ---
@@ -170,297 +124,142 @@ npm install -g opendesktop
 |-------------|---------|-------------|
 | **Node.js** | v18.0.0 | v20+ (LTS) |
 | **npm** | v8.0.0 | v10+ |
-| **OS** | Linux, macOS 12+, Windows 10+ | Latest version |
+| **OS** | Linux, macOS 12+, Windows 10+ | Latest |
 | **RAM** | 4GB | 8GB+ |
-| **Disk** | 500MB free | 2GB+ |
 | **Network** | Internet connection | Broadband |
 
-### Optional Dependencies
-
-| Dependency | Purpose | Install |
-|------------|---------|---------|
-| **Ollama** | Local AI models | `curl -fsSL https://ollama.ai/install.sh \| sh` |
-| **FFmpeg** | Screen recording | `brew install ffmpeg` / `apt install ffmpeg` |
-| **Tesseract** | OCR (fallback) | `brew install tesseract` / `apt install tesseract-ocr` |
-
 ---
 
-## 🎯 Features
+## 🎯 Complete Feature List
 
 ### 🤖 AI Engine
-- **50+ AI Providers** — OpenRouter, OpenAI, Anthropic, Google, Nvidia NIM, Groq, Ollama, and many more
-- **Smart Model Router** — Auto-picks the best model for each task
-- **Streaming Responses** — Real-time output as AI thinks
-- **Conversation Memory** — Maintains context across chats
-- **Custom System Prompts** — Personalize AI behavior
+- **19 AI Providers** — OpenRouter, OpenAI, Anthropic, Google, Nvidia NIM, Groq, Together, Fireworks, Mistral, Cohere, Perplexity, DeepSeek, xAI, Cerebras, SambaNova, Ollama, LM Studio, vLLM, TextGen
+- **100+ Models** — GPT-4o, Claude 3.5, Gemini, Llama 3.1 405B, Mixtral, and more
+- **Smart Model Router** — Auto-picks best model for each task
+- **Streaming Responses** — Real-time output
+- **Custom Endpoints** — Any OpenAI-compatible API
 
 ### 👁️ Vision System
-- **Screenshot Capture** — Take screenshots of any screen
-- **Screen Analysis** — AI reads and understands everything on screen
-- **UI Element Detection** — Identifies buttons, text, inputs, menus
-- **OCR Text Extraction** — Read text from images and screen
-- **Multi-Monitor Support** — Works with multiple displays
+- **Screenshot Capture** — Any screen, any monitor
+- **Screen Analysis** — AI reads and understands everything
+- **UI Element Detection** — Buttons, text, inputs, menus
+- **OCR Text Extraction** — Read text from images
+- **Multi-Monitor Support** — Multiple displays
 - **Screen Watching** — Continuous monitoring mode
-- **Screen Recording** — Record screen activity
 
 ### 🖥️ Desktop Automation
-- **Mouse Control** — Click, double-click, right-click, drag, scroll
-- **Keyboard Control** — Type text, hotkeys, keyboard shortcuts
-- **Window Management** — Open, close, minimize, maximize, resize, move
-- **Application Launcher** — Open any program by name
-- **File System** — Create, read, write, move, delete, search files
-- **Clipboard** — Read and write clipboard content
-- **System Commands** — Run any shell command
-- **Process Management** — List, monitor, kill processes
-- **Notifications** — Desktop notifications
+- **Mouse Control** — Click, drag, scroll, hover
+- **Keyboard Control** — Type text, hotkeys, shortcuts
+- **Window Management** — Open, close, minimize, maximize, resize
+- **Application Launcher** — Open any program
+- **File System** — CRUD operations, search
+- **Clipboard** — Read/write clipboard
+- **Shell Commands** — Run anything
+- **Process Management** — List, monitor, kill
+- **Desktop Notifications** — Native alerts
 
-### 🔗 Connectivity
-- **WiFi Management** — Scan, connect, manage networks
-- **Bluetooth** — Pair and manage devices
-- **SSH Remote** — Connect to remote servers
-- **Network Tools** — Ping, traceroute, DNS lookup
-- **API Client** — Make HTTP requests
+### 💻 Code Executor (30+ Languages)
+- JavaScript, Python, TypeScript, Go, Rust, C, C++, Java, Ruby, PHP, Lua, R, Julia, Swift, Kotlin, Bash, PowerShell, SQL, HTML, Zig, Elixir, Haskell, Clojure, Scala, Dart, Nim, and more
+- **Auto Language Detection** — Detects language from code
+- **Project Scaffolding** — Create projects from templates
+- **Compile & Run** — Compiled languages supported
+
+### 🚀 Deployer (18 Targets)
+- Vercel, Netlify, GitHub Pages, Docker, AWS, GCP, Azure, Heroku, Fly.io, Railway, Render, Surge, Firebase, Cloudflare, npm, PyPI, SSH, FTP
 
 ### 🧠 Memory System
-- **Episodic Memory** — Chronological event logging
-- **Semantic Memory** — Facts, knowledge, preferences
+- **Episodic Memory** — Chronological events
+- **Semantic Memory** — Facts and knowledge
 - **Task Memory** — Track completed actions
-- **Conversation Memory** — Save and search chat history
-- **Profile Memory** — Learn user preferences over time
-- **Full-Text Search** — Search across all memory
-- **Export/Import** — Backup and restore memory
-- **Selective Forgetting** — Privacy controls
+- **Conversation Memory** — Save chat sessions
+- **Profile Memory** — User preferences
+- **Full-Text Search** — Search everything
+- **Export/Import** — Backup and restore
 
-### 🌐 Browser Automation
-- **Open URLs** — Launch any website
-- **Tab Management** — Open, close, switch tabs
-- **Form Filling** — Auto-fill web forms
-- **Web Scraping** — Extract data from websites
-- **Download Manager** — Download and organize files
+### 📈 Learning System
+- **Command Tracking** — Learns what you do frequently
+- **Correction Learning** — Learns from mistakes
+- **Preference Learning** — Adapts to your style
+- **Pattern Detection** — Identifies behavior patterns
+- **Smart Suggestions** — Proactive recommendations
+- **User Profile Building** — Builds a model of you
+
+### 🧩 Skill Creator
+- **Create Skills** — Build tools from natural language
+- **Plugin Architecture** — Extensible plugin system
+- **15+ Built-in Skills** — Web search, Git, Docker, SSH, API client, PDF, translate, weather, email, calendar, crypto, stocks
+- **Hot Reload** — Skills load dynamically
+
+### 📋 Workflow Builder
+- **Create Workflows** — Chain actions together
+- **Natural Language** — Describe workflow in English
+- **Conditional Logic** — If/then branching
+- **Variables** — Pass data between steps
+- **Error Handling** — Retry, skip, or stop on error
+- **Scheduling** — Run workflows on schedule
+
+### 🎭 Persona System
+- **6 Preset Personas** — Professional, Casual, Hacker, Creative, Teacher, Butler
+- **Custom Personas** — Create your own
+- **Trait System** — Humor, formality, verbosity
+- **Auto-Generate** — From your interaction history
+
+### 🎤 Voice System
+- **Text-to-Speech** — Native TTS on all platforms
+- **Speech-to-Text** — Whisper API integration
+- **Wake Word** — "Hey Desktop" trigger
+- **Multi-Language** — 12+ languages
+
+### ⌨️ Global Hotkey
+- **Summon Anywhere** — Press hotkey from any app
+- **Customizable** — Ctrl+Shift+Space, Ctrl+Alt+O, etc.
+- **Cross-Platform** — Linux, macOS, Windows
 
 ### 💬 Messaging Integration
-- **Telegram** — Chat with your AI via Telegram bot
-- **Discord** — Discord bot integration
-- **WhatsApp** — WhatsApp Web integration
-- **Slack** — Slack bot integration
+- **Telegram** — Bot integration
+- **Discord** — Bot integration
+- **WhatsApp** — Web integration
+- **Slack** — Bot integration
 
-### 🧩 Plugin System
-- **Built-in Skills** — Web search, code execution, Git, Docker, SSH, and more
-- **Custom Plugins** — Build and install your own plugins
-- **Community Plugins** — Share plugins with others
+### ⚙️ Settings (14 Sections)
+- AI Models, Providers, Messaging, Voice, Vision, Memory, Theme, Hotkey, Permissions, Persona, Skills, Workflows, System Status, Advanced
 
----
-
-## 🤖 AI Providers
-
-OpenDesktop supports **18+ providers** with **100+ models**:
-
-| Provider | Models | Notes |
-|----------|--------|-------|
-| **OpenRouter** | 50+ models | Access to all major models |
-| **OpenAI** | GPT-4o, GPT-4, o1 | Latest GPT models |
-| **Anthropic** | Claude 3.5, Claude 3 Opus | Best reasoning |
-| **Google** | Gemini Pro, Gemini 1.5 | Google's flagship |
-| **Nvidia NIM** | Llama 3.1 405B, Nemotron | Enterprise inference |
-| **Groq** | Llama 3.1, Mixtral | Ultra-fast inference |
-| **Together AI** | Llama, Mixtral, Qwen | Open source models |
-| **Fireworks AI** | Llama, Mixtral | Fast inference |
-| **Mistral AI** | Mistral Large, Mixtral | European AI |
-| **Cohere** | Command R+ | Enterprise RAG |
-| **Perplexity** | Sonar models | Search-augmented |
-| **DeepSeek** | DeepSeek Chat, Coder | Coding specialist |
-| **xAI** | Grok 2 | Elon's AI |
-| **Cerebras** | Llama 3.1 | Wafer-scale inference |
-| **SambaNova** | Llama 3.1 405B | Enterprise AI |
-| **Ollama** | Any local model | 100% local, private |
-| **LM Studio** | Any local model | Local inference |
-| **vLLM** | Any local model | High-performance local |
+### 🎨 Themes
+- 🔴 Hacker Red (default)
+- 🟢 Matrix Green
+- 🔵 Cyberpunk Blue
+- ⚪ Minimal Light
+- 🟣 Vaporwave
 
 ---
 
 ## 💬 Commands
 
-### CLI Commands
-
 | Command | Description |
 |---------|-------------|
 | `/help` | Show all commands |
+| `/settings` | Settings page (14 sections) |
 | `/model <name>` | Switch AI model |
-| `/providers` | List all providers |
-| `/models` | List models for current provider |
+| `/providers` | List providers |
 | `/memory` | Memory dashboard |
-| `/search <query>` | Search memory |
-| `/screen` | Take screenshot & analyze |
-| `/vision <question>` | Analyze screen with question |
-| `/run <command>` | Run shell command |
+| `/search <q>` | Search memory |
+| `/screen` | Screenshot & analyze |
+| `/vision <q>` | Analyze screen |
+| `/run <cmd>` | Shell command |
 | `/open <app>` | Open application |
-| `/browse <url>` | Open URL in browser |
-| `/system` | System information |
-| `/processes` | List running processes |
-| `/plugins` | List available plugins |
-| `/clipboard` | Show clipboard content |
-| `/network` | Network information |
-| `/ping <host>` | Ping a host |
-| `/notify <message>` | Desktop notification |
-| `/theme <name>` | Change color theme |
-| `/history` | Chat history |
+| `/browse <url>` | Open URL |
+| `/code <lang> <code>` | Execute code |
+| `/project <name>` | Create project |
+| `/deploy <target>` | Deploy project |
+| `/create-skill <desc>` | Create skill |
+| `/workflow <desc>` | Create workflow |
+| `/run-wf <name>` | Run workflow |
+| `/persona <name>` | Activate persona |
+| `/speak <text>` | Text to speech |
+| `/listen` | Start voice |
+| `/theme <name>` | Change theme |
 | `/clear` | Clear screen |
-| `/reset` | Reset AI context |
-| `/export` | Export memory |
 | `/quit` | Exit |
-
-### Natural Language
-
-Just talk naturally! Examples:
-
-```
-"Open Chrome and go to GitHub"
-"What's on my screen right now?"
-"Create a file called notes.txt with my todo list"
-"What's the weather in Tokyo?"
-"Take a screenshot and describe what you see"
-"Run git status in my project folder"
-"Find all PDF files in my Downloads folder"
-"What processes are using the most memory?"
-```
-
----
-
-## ⚙️ Configuration
-
-Configuration is stored in `~/.opendesktop/config.json`:
-
-```json
-{
-  "version": "1.0.0",
-  "provider": {
-    "name": "openrouter",
-    "apiKey": "your-api-key",
-    "endpoint": null,
-    "model": "anthropic/claude-3.5-sonnet"
-  },
-  "features": {
-    "voice": true,
-    "vision": true,
-    "memory": true,
-    "automation": true,
-    "browser": true
-  },
-  "theme": "hacker-red",
-  "messaging": {
-    "enabled": false,
-    "platforms": []
-  },
-  "hotkey": {
-    "enabled": true,
-    "key": "ctrl+shift+space"
-  },
-  "permissions": {
-    "screenControl": true,
-    "fileSystem": true,
-    "network": true,
-    "clipboard": true,
-    "notifications": true,
-    "systemCommands": true
-  }
-}
-```
-
-### Themes
-
-| Theme | Description |
-|-------|-------------|
-| `hacker-red` | 🔴 Red/black hacker aesthetic (default) |
-| `matrix` | 🟢 Matrix green terminal |
-| `cyberpunk` | 🔵 Cyan/magenta cyberpunk |
-| `minimal` | ⚪ Clean minimal light |
-| `vaporwave` | 🟣 Pink/purple vaporwave |
-
----
-
-## 💬 Messaging Integration
-
-### Telegram Bot Setup
-
-1. Create a bot via [@BotFather](https://t.me/BotFather)
-2. Get your bot token
-3. Add to config:
-```json
-{
-  "messaging": {
-    "enabled": true,
-    "platforms": ["telegram"],
-    "telegram": {
-      "token": "YOUR_BOT_TOKEN"
-    }
-  }
-}
-```
-
-### Discord Bot Setup
-
-1. Create app at [Discord Developer Portal](https://discord.com/developers)
-2. Create bot and get token
-3. Add to config:
-```json
-{
-  "messaging": {
-    "enabled": true,
-    "platforms": ["discord"],
-    "discord": {
-      "token": "YOUR_BOT_TOKEN"
-    }
-  }
-}
-```
-
----
-
-## 🧩 Plugin System
-
-### Built-in Skills
-
-| Skill | Command | Description |
-|-------|---------|-------------|
-| `web-search` | `/search` | Search the web |
-| `code-exec` | `/code` | Execute code |
-| `file-manager` | `/files` | File operations |
-| `git-control` | `/git` | Git management |
-| `docker-control` | `/docker` | Docker management |
-| `ssh-remote` | `/ssh` | SSH connections |
-| `api-client` | `/api` | HTTP requests |
-| `pdf-reader` | `/pdf` | PDF extraction |
-| `image-gen` | `/imagine` | Image generation |
-| `translate` | `/translate` | Translation |
-| `weather` | `/weather` | Weather info |
-| `email-manager` | `/email` | Email management |
-| `calendar` | `/calendar` | Calendar |
-| `crypto` | `/crypto` | Crypto prices |
-| `stock-market` | `/stocks` | Stock data |
-
-### Custom Plugins
-
-Create a plugin in `~/.opendesktop/plugins/my-plugin/`:
-
-**plugin.json:**
-```json
-{
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "description": "My custom plugin",
-  "main": "index.js"
-}
-```
-
-**index.js:**
-```javascript
-module.exports = {
-  async myAction(params, engine) {
-    // Your code here
-    return { result: 'Hello from my plugin!' };
-  }
-};
-```
 
 ---
 
@@ -468,50 +267,38 @@ module.exports = {
 
 ```
 OpenDesktop/
-├── bin/
-│   └── opendesktop          # CLI entry point
+├── bin/opendesktop              # CLI entry point
 ├── src/
-│   ├── index.js             # Main export
 │   ├── core/
-│   │   ├── engine.js        # Core AI engine
-│   │   └── config.js        # Configuration manager
-│   ├── providers/
-│   │   └── index.js         # 50+ AI provider registry
-│   ├── vision/
-│   │   └── index.js         # Screen vision & OCR
-│   ├── automation/
-│   │   └── index.js         # Desktop automation engine
-│   ├── memory/
-│   │   └── index.js         # Persistent memory system
-│   ├── messaging/
-│   │   └── index.js         # Messaging integrations
-│   ├── gui/
-│   │   └── index.js         # Rich terminal GUI
-│   ├── cli/
-│   │   └── setup.js         # Setup wizard
-│   └── plugins/
-│       └── index.js         # Plugin manager
-├── tests/
-│   └── test.js              # Test suite
-├── install.sh               # Installation script
+│   │   ├── engine.js            # 🧠 Core AI engine (integrates everything)
+│   │   └── config.js            # ⚙️ Configuration manager
+│   ├── providers/index.js       # 🤖 19 AI providers, 100+ models
+│   ├── vision/index.js          # 👁️ Screen vision & OCR
+│   ├── automation/index.js      # 🖥️ Desktop automation engine
+│   ├── memory/index.js          # 🧠 Persistent memory system
+│   ├── messaging/index.js       # 💬 Messaging integrations
+│   ├── gui/index.js             # 🖥️ Rich terminal GUI
+│   ├── cli/setup.js             # 🔧 Setup wizard
+│   ├── plugins/index.js         # 🧩 Plugin manager
+│   ├── hotkey/index.js          # ⌨️ Global hotkey
+│   ├── voice/index.js           # 🎤 Voice system
+│   ├── code-executor/index.js   # 💻 Code executor (30+ languages)
+│   ├── deployer/index.js        # 🚀 Deployer (18 targets)
+│   ├── learning/index.js        # 📈 Learning system
+│   ├── skill-creator/index.js   # 🧩 Skill creator
+│   ├── workflows/index.js       # 📋 Workflow builder
+│   ├── persona/index.js         # 🎭 Persona system
+│   └── settings/index.js        # ⚙️ Settings page
+├── tests/test.js                # ✅ 61 tests, all passing
+├── install.sh                   # 📦 Installation script
 ├── package.json
-├── LICENSE
+├── LICENSE (MIT)
 └── README.md
 ```
 
 ---
 
 ## 🤝 Contributing
-
-We welcome contributions! Here's how:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Development Setup
 
 ```bash
 git clone https://github.com/Atum246/OpenDesktop.git
@@ -520,38 +307,11 @@ npm install
 npm test
 ```
 
-### Roadmap
-
-- [ ] Full robotjs integration (real mouse/keyboard control)
-- [ ] Voice input/output (Whisper + TTS)
-- [ ] Web UI dashboard
-- [ ] Mobile companion app
-- [ ] Plugin marketplace
-- [ ] Multi-agent collaboration
-- [ ] Self-healing capabilities
-- [ ] Screen recording with AI analysis
-- [ ] Workflow visual builder
-- [ ] Cloud sync for memory
-
 ---
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## 🙏 Acknowledgments
-
-Built with:
-- [OpenAI](https://openai.com) — GPT models
-- [Anthropic](https://anthropic.com) — Claude models
-- [OpenRouter](https://openrouter.ai) — Multi-model access
-- [Nvidia NIM](https://build.nvidia.com) — Enterprise inference
-- [Ollama](https://ollama.ai) — Local model serving
-- [chalk](https://github.com/chalk/chalk) — Terminal styling
-- [inquirer](https://github.com/SBoudrias/Inquirer.js) — CLI prompts
-- [figlet](https://github.com/patorjk/figlet.js) — ASCII art
+MIT License — see [LICENSE](LICENSE)
 
 ---
 
@@ -559,6 +319,6 @@ Built with:
 
 **Made with ❤️ by the OpenDesktop Community**
 
-[GitHub](https://github.com/Atum246/OpenDesktop) • [npm](https://www.npmjs.com/package/opendesktop) • [Issues](https://github.com/Atum246/OpenDesktop/issues)
+[GitHub](https://github.com/Atum246/OpenDesktop) • [npm](https://www.npmjs.com/package/opendesktop-ai) • [Issues](https://github.com/Atum246/OpenDesktop/issues)
 
 </div>
