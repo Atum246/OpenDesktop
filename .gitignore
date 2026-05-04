@@ -1,0 +1,10 @@
+node_modules/
+.opendesktop/
+*.log
+.DS_Store
+Thumbs.db
+.env
+dist/
+coverage/
+*.tgz
+.npmrc

@@ -1,0 +1,11 @@
+#!/usr/bin/env node
+'use strict';
+const path = require('path');
+const args = process.argv.slice(2);
+if (args.includes('--gui') || args.includes('-g')) {
+  require(path.join(__dirname, '..', 'src', 'gui', 'index.js'));
+} else if (args.includes('--setup') || args.includes('-s')) {
+  require(path.join(__dirname, '..', 'src', 'cli', 'setup.js'));
+} else {
+  require(path.join(__dirname, '..', 'src', 'cli', 'index.js'));
+}
