@@ -32,15 +32,50 @@ class AutomationEngine {
   }
 
   // ─── MOUSE CONTROL ───
-  async mouseClick(x, y, button) { return this._runPlatformCmd(`mouse click ${button || 'left'} at ${x},${y}`, { x, y, button: button || 'left' }); }
-  async mouseMove(x, y) { return this._runPlatformCmd(`mouse move to ${x},${y}`, { x, y }); }
-  async mouseDrag(x1, y1, x2, y2) { return this._runPlatformCmd(`mouse drag from ${x1},${y1} to ${x2},${y2}`, { x1, y1, x2, y2 }); }
-  async mouseScroll(direction, amount) { return this._runPlatformCmd(`mouse scroll ${direction} ${amount || 3}`, { direction, amount: amount || 3 }); }
+  async mouseClick(x, y, button) {
+    const btn = button || 'left';
+    if (this.platform === 'linux') return this.runCommand(`xdotool mousemove ${x} ${y} && xdotool click ${btn === 'right' ? '3' : btn === 'middle' ? '2' : '1'}`);
+    if (this.platform === 'darwin') return this.runCommand(`cliclick c:${x},${y}`);
+    return this._runPlatformCmd(`mouse click ${btn} at ${x},${y}`, { x, y, button: btn });
+  }
+  async mouseMove(x, y) {
+    if (this.platform === 'linux') return this.runCommand(`xdotool mousemove ${x} ${y}`);
+    if (this.platform === 'darwin') return this.runCommand(`cliclick m:${x},${y}`);
+    return this._runPlatformCmd(`mouse move to ${x},${y}`, { x, y });
+  }
+  async mouseDrag(x1, y1, x2, y2) {
+    if (this.platform === 'linux') return this.runCommand(`xdotool mousedown 1 mousemove ${x2} ${y2} mouseup 1`);
+    return this._runPlatformCmd(`mouse drag from ${x1},${y1} to ${x2},${y2}`, { x1, y1, x2, y2 });
+  }
+  async mouseScroll(direction, amount) {
+    const clicks = amount || 3;
+    if (this.platform === 'linux') return this.runCommand(`xdotool click ${direction === 'up' ? '4' : '5'} `.repeat(clicks));
+    if (this.platform === 'darwin') return this.runCommand(`cliclick kd:ctrl ao:0,${direction === 'up' ? clicks * 3 : -clicks * 3} ku:ctrl`);
+    return this._runPlatformCmd(`mouse scroll ${direction} ${clicks}`, { direction, amount: clicks });
+  }
 
   // ─── KEYBOARD CONTROL ───
-  async typeText(text) { return this._runPlatformCmd(`type "${text}"`, { text }); }
-  async pressKey(key) { return this._runPlatformCmd(`press key ${key}`, { key }); }
-  async hotkey(...keys) { return this._runPlatformCmd(`hotkey ${keys.join('+')}`, { keys }); }
+  async typeText(text) {
+    if (this.platform === 'linux') return this.runCommand(`xdotool type --clearmodifiers "${text.replace(/"/g, '\\"')}"`);
+    if (this.platform === 'darwin') return this.runCommand(`osascript -e 'tell application "System Events" to keystroke "${text.replace(/"/g, '\\"')}"'`);
+    return this._runPlatformCmd(`type "${text}"`, { text });
+  }
+  async pressKey(key) {
+    if (this.platform === 'linux') return this.runCommand(`xdotool key ${key}`);
+    if (this.platform === 'darwin') return this.runCommand(`osascript -e 'tell application "System Events" to key code ${this._getKeyCode(key)}'`);
+    return this._runPlatformCmd(`press key ${key}`, { key });
+  }
+  async hotkey(...keys) {
+    const combo = keys.join('+');
+    if (this.platform === 'linux') return this.runCommand(`xdotool key ${combo}`);
+    if (this.platform === 'darwin') return this.runCommand(`osascript -e 'tell application "System Events" to keystroke "${keys.pop()}" using {${keys.map(k => k + ' down').join(', ')}}'`);
+    return this._runPlatformCmd(`hotkey ${combo}`, { keys });
+  }
+
+  _getKeyCode(key) {
+    const codes = { 'return': 36, 'enter': 36, 'tab': 48, 'space': 49, 'delete': 51, 'escape': 53, 'up': 126, 'down': 125, 'left': 123, 'right': 124, 'f1': 122, 'f2': 120, 'f3': 99, 'f4': 118, 'f5': 96, 'f6': 97, 'f7': 98, 'f8': 100, 'f9': 101, 'f10': 109, 'f11': 103, 'f12': 111 };
+    return codes[key.toLowerCase()] || 0;
+  }
 
   // ─── WINDOW MANAGEMENT ───
   async openApp(appName) {

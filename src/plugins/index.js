@@ -19,23 +19,30 @@ class PluginManager {
   }
 
   async loadAll() {
-    const entries = fs.readdirSync(this.dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        const manifestPath = path.join(this.dir, entry.name, 'plugin.json');
-        if (fs.existsSync(manifestPath)) {
-          try {
-            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-            const mainPath = path.join(this.dir, entry.name, manifest.main || 'index.js');
-            if (fs.existsSync(mainPath)) {
-              const plugin = require(mainPath);
-              this.plugins.set(manifest.name, { manifest, instance: plugin, enabled: true });
-            }
-          } catch (err) { console.log(`[Plugin] Failed to load ${entry.name}: ${err.message}`); }
+    let loaded = 0;
+    try {
+      const entries = fs.readdirSync(this.dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const manifestPath = path.join(this.dir, entry.name, 'plugin.json');
+          if (fs.existsSync(manifestPath)) {
+            try {
+              const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+              if (!manifest.name || !manifest.main) continue;
+              const mainPath = path.join(this.dir, entry.name, manifest.main);
+              if (fs.existsSync(mainPath)) {
+                try {
+                  const plugin = require(mainPath);
+                  this.plugins.set(manifest.name, { manifest, instance: plugin, enabled: true });
+                  loaded++;
+                } catch (err) { console.log(`[Plugin] Failed to load ${entry.name}: ${err.message}`); }
+              }
+            } catch (err) { console.log(`[Plugin] Invalid manifest in ${entry.name}: ${err.message}`); }
+          }
         }
       }
-    }
-    return { loaded: this.plugins.size, names: [...this.plugins.keys()] };
+    } catch (err) { console.log(`[Plugin] Failed to read plugins dir: ${err.message}`); }
+    return { loaded, names: [...this.plugins.keys()] };
   }
 
   async execute(pluginName, action, params) {

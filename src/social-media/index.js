@@ -124,13 +124,15 @@ class SocialMediaAutomation {
   // ─── CONTENT STRATEGY ───
   async generateContentPlan(topic, days, platforms) {
     const plan = await this.provider.chat(
-      `Create a ${days}-day content plan for ${topic} across ${platforms.join(', ')}.\nReturn as JSON array: [{day, platform, contentType, topic, hashtags, bestTime}]`,
+      `Create a ${days}-day content plan for ${topic} across ${platforms.join(', ')}.\nReturn as JSON array: [{day, platform, contentType, topic, hashtags, bestTime}]\nReturn ONLY valid JSON, no markdown or explanations.`,
       { maxTokens: 4000 }
     );
     try {
-      return JSON.parse(plan.match(/\[[\s\S]*\]/)?.[0] || '[]');
+      const jsonMatch = plan.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) return { error: 'Could not parse content plan', raw: plan };
+      return JSON.parse(jsonMatch[0]);
     } catch {
-      return { raw: plan };
+      return { error: 'Invalid JSON in content plan', raw: plan };
     }
   }
 

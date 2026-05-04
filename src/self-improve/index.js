@@ -54,7 +54,7 @@ class SelfImprovementEngine {
   // ─── CODE ANALYSIS ───
   async analyzeOwnCode() {
     const files = this._getSourceFiles();
-    const analysis = { files: 0, totalLines: 0, modules: [], complexity: 0, suggestions: [] };
+    const analysis = { files: 0, totalLines: 0, modules: [], complexity: 0, suggestions: [], errors: [] };
 
     for (const file of files) {
       try {
@@ -63,7 +63,7 @@ class SelfImprovementEngine {
         analysis.files++;
         analysis.totalLines += lines.length;
 
-        const moduleName = path.relative(this.srcDir, file).split('/')[0];
+        const moduleName = path.relative(this.srcDir, file).split(path.sep)[0];
         if (!analysis.modules.includes(moduleName)) analysis.modules.push(moduleName);
 
         // Detect complexity patterns
@@ -82,7 +82,13 @@ class SelfImprovementEngine {
         if (content.match(/catch\s*\(\s*\w+\s*\)\s*\{[\s\n]*\}/)) {
           analysis.suggestions.push({ file, type: 'error-handling', message: 'Empty catch blocks detected' });
         }
-      } catch {}
+        // Detect console.log in production code (not tests)
+        if (!file.includes('test') && (content.match(/console\.log\(/g) || []).length > 5) {
+          analysis.suggestions.push({ file, type: 'logging', message: 'Excessive console.log — consider using a logger' });
+        }
+      } catch (err) {
+        analysis.errors.push({ file, error: err.message });
+      }
     }
     return analysis;
   }
@@ -129,12 +135,14 @@ class SelfImprovementEngine {
 
     // Identify slow areas
     if (report.responseTime?.trend > 0) {
-      optimizations.push('Response time increasing — consider caching or simplifying prompts');
+      optimizations.push({ type: 'performance', suggestion: 'Response time increasing — consider caching or simplifying prompts', impact: 'high' });
     }
 
     // Identify refactoring opportunities
     for (const suggestion of analysis.suggestions) {
-      if (suggestion.type === 'refactor') optimizations.push(suggestion.message);
+      if (suggestion.type === 'refactor') optimizations.push({ type: 'refactor', suggestion: suggestion.message, impact: 'medium' });
+      if (suggestion.type === 'error-handling') optimizations.push({ type: 'error-handling', suggestion: suggestion.message, impact: 'medium' });
+      if (suggestion.type === 'todo') optimizations.push({ type: 'todo', suggestion: suggestion.message, impact: 'low' });
     }
 
     // Identify unused code
@@ -152,7 +160,7 @@ class SelfImprovementEngine {
               return otherContent.includes(mod) || otherContent.includes(exports);
             } catch { return false; }
           });
-          if (!usedElsewhere) optimizations.push(`Module ${mod} may be unused`);
+          if (!usedElsewhere) optimizations.push({ type: 'unused', suggestion: `Module ${mod} may be unused`, impact: 'low' });
         }
       } catch {}
     }

@@ -371,15 +371,19 @@ class SettingsPage {
 
   async _skillsSettings() {
     console.log(this._header('🧩 Skills & Plugins'));
-    const skills = this.engine.plugins?.list() || [];
-    const builtins = this.engine.plugins?.getBuiltInSkills() || [];
+    try {
+      const skills = this.engine.plugins?.list() || [];
+      const builtins = this.engine.plugins?.getBuiltInSkills() || [];
 
-    console.log(chalk.hex('#FF0000')('\n  Built-in Skills:'));
-    builtins.forEach(s => console.log(chalk.hex('#00FFFF')(`    ${s.command}`) + chalk.hex('#888888')(` — ${s.description}`)));
+      console.log(chalk.hex('#FF0000')('\n  Built-in Skills:'));
+      builtins.forEach(s => console.log(chalk.hex('#00FFFF')(`    ${s.command}`) + chalk.hex('#888888')(` — ${s.description}`)));
 
-    if (skills.length) {
-      console.log(chalk.hex('#FF0000')('\n  Custom Skills:'));
-      skills.forEach(s => console.log(chalk.hex('#00FFFF')(`    ${s.name}`) + chalk.hex('#888888')(` — ${s.description || 'No description'}`)));
+      if (skills.length) {
+        console.log(chalk.hex('#FF0000')('\n  Custom Skills:'));
+        skills.forEach(s => console.log(chalk.hex('#00FFFF')(`    ${s.name}`) + chalk.hex('#888888')(` — ${s.description || 'No description'}`)));
+      }
+    } catch (err) {
+      console.log(chalk.hex('#FF0000')(`  Error loading skills: ${err.message}`));
     }
   }
 

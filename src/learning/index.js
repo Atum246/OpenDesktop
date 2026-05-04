@@ -46,6 +46,7 @@ class LearningSystem {
     for (let i = 0; i < events.length - 1; i++) {
       const current = events[i].command || events[i].type;
       const next = events[i + 1]?.command || events[i + 1]?.type;
+      if (!current || !next) continue;
       const key = `${current} -> ${next}`;
       commandSequences[key] = (commandSequences[key] || 0) + 1;
     }
@@ -54,6 +55,7 @@ class LearningSystem {
       if (count >= 3) patterns.push({ sequence, count, type: 'command-sequence' });
     }
 
+    this.patterns = patterns;
     return patterns;
   }
 

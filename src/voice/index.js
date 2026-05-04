@@ -74,14 +74,17 @@ class VoiceSystem {
       const provider = this.engine?.provider;
       if (provider?.providerName === 'openai' || provider?.providerName === 'openrouter') {
         const axios = require('axios');
-        const FormData = require('form-data');
+        const FormData = globalThis.FormData || require('form-data');
         const form = new FormData();
-        form.append('file', fs.createReadStream(audioPath));
+        const fileStream = fs.createReadStream(audioPath);
+        form.append('file', fileStream, path.basename(audioPath));
         form.append('model', 'whisper-1');
         form.append('language', this.language.split('-')[0]);
 
         const resp = await axios.post('https://api.openai.com/v1/audio/transcriptions', form, {
-          headers: { ...form.getHeaders(), 'Authorization': `Bearer ${provider.apiKey}` }
+          headers: { ...form.getHeaders(), 'Authorization': `Bearer ${provider.apiKey}` },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity
         });
         return { text: resp.data.text, success: true };
       }

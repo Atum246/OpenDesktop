@@ -40,12 +40,14 @@ class CodeRewriter {
     const backupDir = path.join(os.homedir(), '.opendesktop', 'backups', `rewrite_${Date.now()}`);
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
+    const original = fs.readFileSync(targetFile, 'utf8');
+
     const result = await this.analyzeAndRewrite(targetFile, goal);
     if (!result.improvedCode) return { error: 'Could not generate improved code', analysis: result.analysis };
 
     // Backup original
     const backupPath = path.join(backupDir, path.basename(targetFile));
-    fs.copyFileSync(targetFile, backupPath);
+    fs.writeFileSync(backupPath, original);
 
     // Write improved code
     fs.writeFileSync(targetFile, result.improvedCode);

@@ -25,7 +25,7 @@ const PROVIDERS = {
   google: {
     name: 'Google AI', baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
     models: ['gemini-pro','gemini-pro-vision','gemini-1.5-pro','gemini-1.5-flash'],
-    headers: () => ({ 'Content-Type': 'application/json' }),
+    headers: (k) => ({ 'Content-Type': 'application/json', 'x-goog-api-key': k }),
     isGoogle: true
   },
   groq: {
@@ -161,24 +161,36 @@ class ProviderRegistry {
   }
 
   async _chatAnthropic(baseUrl, headers, message, options) {
+    const messages = this.conversationHistory.slice(-20).map(m => ({ role: m.role, content: m.content }));
+    // Anthropic requires messages to start with 'user' role
+    if (messages.length && messages[0].role !== 'user') messages.unshift({ role: 'user', content: '(conversation continued)' });
+    // Anthropic requires alternating user/assistant messages — merge consecutive same-role messages
+    const merged = [];
+    for (const msg of messages) {
+      if (merged.length && merged[merged.length - 1].role === msg.role) {
+        merged[merged.length - 1].content += '\n\n' + msg.content;
+      } else {
+        merged.push({ ...msg });
+      }
+    }
     const resp = await axios.post(`${baseUrl}/messages`, {
       model: options.model || this.model,
       max_tokens: options.maxTokens || 4096,
       system: options.systemPrompt || this.systemPrompt,
-      messages: this.conversationHistory.slice(-20).map(m => ({ role: m.role, content: m.content }))
+      messages: merged
     }, { headers, timeout: 120000 });
     return resp.data.content[0].text;
   }
 
   async _chatGoogle(baseUrl, headers, message, options) {
     const model = options.model || this.model;
-    const resp = await axios.post(`${baseUrl}/models/${model}:generateContent?key=${this.apiKey}`, {
+    const resp = await axios.post(`${baseUrl}/models/${model}:generateContent`, {
       contents: this.conversationHistory.slice(-20).map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       })),
       generationConfig: { maxOutputTokens: options.maxTokens || 4096, temperature: options.temperature ?? 0.7 }
-    }, { headers, timeout: 120000 });
+    }, { headers: { ...headers, 'x-goog-api-key': this.apiKey }, timeout: 120000 });
     return resp.data.candidates[0].content.parts[0].text;
   }
 
@@ -187,8 +199,9 @@ class ProviderRegistry {
       model: options.model || this.model,
       message: message,
       chat_history: this.conversationHistory.slice(-20).map(m => ({ role: m.role === 'user' ? 'USER' : 'CHATBOT', message: m.content })),
-      max_tokens: options.maxTokens || 4096
-    }, { headers, timeout: 120000 });
+      max_tokens: options.maxTokens || 4096,
+      preamble: options.systemPrompt || this.systemPrompt
+    }, { headers: { ...headers, 'Authorization': `Bearer ${this.apiKey}` }, timeout: 120000 });
     return resp.data.text;
   }
 

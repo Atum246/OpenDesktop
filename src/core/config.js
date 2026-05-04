@@ -38,7 +38,15 @@ class Config {
     obj[keys[keys.length - 1]] = value;
     this.save();
   }
-  save() { fs.writeFileSync(CONFIG_FILE, JSON.stringify(this.data, null, 2)); }
+  save() {
+    try {
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(this.data, null, 2));
+    } catch (err) {
+      // Ensure directory exists (race condition fix)
+      this._ensureDirs();
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(this.data, null, 2));
+    }
+  }
   get paths() { return { configDir: CONFIG_DIR, configFile: CONFIG_FILE, memoryDir: MEMORY_DIR, logsDir: LOGS_DIR }; }
   reset() { this.data = { ...DEFAULT_CONFIG }; this.save(); }
 }

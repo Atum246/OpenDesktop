@@ -16,7 +16,7 @@ class DeepResearchSystem {
   // ─── DEEP ANALYSIS ───
   async deepAnalyze(topic, options = {}) {
     const depth = options.depth || 'comprehensive';
-    const cacheKey = `analysis_${topic}_${depth}`;
+    const cacheKey = `analysis_${topic.toLowerCase().trim()}_${depth}`;
 
     if (this.researchCache.has(cacheKey)) return this.researchCache.get(cacheKey);
 

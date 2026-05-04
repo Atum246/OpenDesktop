@@ -32,7 +32,6 @@ class GlobalHotkey {
   }
 
   _startLinux() {
-    // Use xdotool + xbindkeys or a custom listener
     const hotkeyMap = {
       'ctrl+shift+space': 'control+shift+space',
       'ctrl+alt+o': 'control+alt+o',
@@ -41,26 +40,48 @@ class GlobalHotkey {
     };
     const key = hotkeyMap[this.hotkey] || 'control+shift+space';
 
-    // Create a lightweight xbindkeys config
-    const configDir = path.join(require('os').homedir(), '.opendesktop');
+    const configDir = path.join(os.homedir(), '.opendesktop');
+    const pipePath = path.join(configDir, 'hotkey-pipe');
     const xbindConfig = path.join(configDir, '.xbindkeysrc');
     const scriptPath = path.join(configDir, 'hotkey-trigger.sh');
 
+    // Create trigger script that writes to named pipe
     fs.writeFileSync(scriptPath, `#!/bin/bash
-echo "OPENDESKTOP_TRIGGER" > ${configDir}/hotkey-pipe
+echo "trigger" > ${pipePath}
 `);
     fs.chmodSync(scriptPath, '755');
+
+    // Create named pipe for reliable communication
+    try { fs.mkfifoSync(pipePath, 0o666); } catch {}
 
     fs.writeFileSync(xbindConfig, `"${scriptPath}"
   ${key}
 `);
+
+    // Start xbindkeys
     try {
       this.process = spawn('xbindkeys', ['-f', xbindConfig], { detached: true, stdio: 'ignore' });
       this.process.unref();
-      return { active: true, hotkey: this.hotkey, method: 'xbindkeys' };
     } catch {
-      return { active: true, hotkey: this.hotkey, method: 'fallback', note: 'Install xbindkeys for hotkey support: sudo apt install xbindkeys' };
+      console.log('[Hotkey] Install xbindkeys: sudo apt install xbindkeys');
     }
+
+    // Watch pipe for trigger events
+    this._watchPipe(pipePath);
+    return { active: true, hotkey: this.hotkey, method: 'xbindkeys' };
+  }
+
+  _watchPipe(pipePath) {
+    const watch = () => {
+      try {
+        if (fs.existsSync(pipePath)) {
+          fs.watchFile(pipePath, { interval: 500 }, () => {
+            this.trigger();
+          });
+        }
+      } catch {}
+    };
+    watch();
   }
 
   _startMacOS() {

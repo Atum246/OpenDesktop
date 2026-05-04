@@ -95,6 +95,31 @@ npm install -g opendesktop-ai 2>/dev/null || {
     sudo npm install -g opendesktop-ai
 }
 
+# Verify installation
+echo -e "${CYAN}  🔍 Verifying installation...${NC}"
+if command -v opendesktop &> /dev/null || command -v od &> /dev/null; then
+    echo -e "${GREEN}  ✅ OpenDesktop command available!${NC}"
+else
+    echo -e "${YELLOW}  ⚠️  opendesktop command not found in PATH.${NC}"
+    NPM_GLOBAL="$(npm root -g 2>/dev/null)/../bin"
+    if [ -d "$NPM_GLOBAL" ]; then
+        export PATH="$NPM_GLOBAL:$PATH"
+        # Add to shell profile for persistence
+        SHELL_PROFILE=""
+        if [ -f "$HOME/.bashrc" ]; then SHELL_PROFILE="$HOME/.bashrc"
+        elif [ -f "$HOME/.zshrc" ]; then SHELL_PROFILE="$HOME/.zshrc"
+        elif [ -f "$HOME/.profile" ]; then SHELL_PROFILE="$HOME/.profile"
+        fi
+        if [ -n "$SHELL_PROFILE" ]; then
+            if ! grep -q "npm.*global.*bin" "$SHELL_PROFILE" 2>/dev/null; then
+                echo "export PATH=\"$NPM_GLOBAL:\$PATH\"" >> "$SHELL_PROFILE"
+                echo -e "${GREEN}  ✅ Added npm global bin to ${SHELL_PROFILE}${NC}"
+            fi
+        fi
+        echo -e "${CYAN}  💡 Run: source ${SHELL_PROFILE:-~/.bashrc}  or restart your terminal${NC}"
+    fi
+fi
+
 echo ""
 echo -e "${GREEN}  ✅ OpenDesktop installed successfully! 🎉${NC}"
 echo ""

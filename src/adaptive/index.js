@@ -66,7 +66,8 @@ class AdaptiveInterface {
     if (hour < 6) return `🌙 Late night${nameStr}! Working hard?`;
     if (hour < 12) return `☀️ Good morning${nameStr}! Ready to be productive?`;
     if (hour < 18) return `🌤️ Good afternoon${nameStr}! What are we building?`;
-    return `🌆 Good evening${nameStr}! What's the plan tonight?`;
+    if (hour < 22) return `🌆 Good evening${nameStr}! What's the plan tonight?`;
+    return `🌙 Late night${nameStr}! Working hard?`;
   }
 
   getPersonalizedPromptPrefix() {

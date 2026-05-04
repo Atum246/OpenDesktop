@@ -82,8 +82,19 @@ class MemorySystem {
   }
 
   // Export / Import
-  exportAll() { return { episodic: this.episodic, semantic: this.semantic, tasks: this.tasks, profile: this.profile }; }
-  importAll(data) { if (data.episodic) { this.episodic = data.episodic; this._save(this.episodicFile, this.episodic); } if (data.semantic) { this.semantic = data.semantic; this._save(this.semanticFile, this.semantic); } if (data.tasks) { this.tasks = data.tasks; this._save(this.taskFile, this.tasks); } if (data.profile) { this.profile = data.profile; this._save(this.profileFile, this.profile); } }
+  exportAll() { return { episodic: this.episodic, semantic: this.semantic, tasks: this.tasks, profile: this.profile, exportedAt: new Date().toISOString(), version: '1.0.0' }; }
+  importAll(data) {
+    if (!data || typeof data !== 'object') return { error: 'Invalid import data' };
+    try {
+      if (data.episodic && Array.isArray(data.episodic)) { this.episodic = data.episodic; this._save(this.episodicFile, this.episodic); }
+      if (data.semantic && typeof data.semantic === 'object') { this.semantic = data.semantic; this._save(this.semanticFile, this.semantic); }
+      if (data.tasks && Array.isArray(data.tasks)) { this.tasks = data.tasks; this._save(this.taskFile, this.tasks); }
+      if (data.profile && typeof data.profile === 'object') { this.profile = data.profile; this._save(this.profileFile, this.profile); }
+      return { imported: true, stats: this.getStats() };
+    } catch (err) {
+      return { error: `Import failed: ${err.message}` };
+    }
+  }
 
   getStats() { return { episodicCount: this.episodic.length, semanticCount: Object.keys(this.semantic).length, taskCount: this.tasks.length, conversationCount: this.listConversations().length, factsCount: this.profile.facts.length }; }
 }

@@ -40,28 +40,55 @@ class VisionSystem {
       const base64 = fs.readFileSync(imgPath).toString('base64');
       const prompt = question || 'Analyze this screenshot in detail. Describe all UI elements, text, buttons, and interactive components you can see. Provide coordinates estimates for clickable elements.';
 
-      if (this.provider.providerName === 'openai' || this.provider.providerName === 'openrouter') {
+      const providerName = this.provider.providerName;
+      const visionModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'claude-3.5-sonnet', 'claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku', 'gemini-pro-vision', 'gemini-1.5-pro', 'gemini-1.5-flash'];
+      const currentModel = this.provider.model;
+      const hasVision = visionModels.some(m => currentModel.includes(m));
+
+      if (!hasVision) {
+        return { analysis: 'Vision analysis requires a vision-capable model (GPT-4o, Claude 3.5, Gemini, etc.)', screenshot: imgPath };
+      }
+
+      if (providerName === 'anthropic') {
         const axios = require('axios');
-        const providerData = require('../providers/index.js').PROVIDERS[this.provider.providerName];
+        const providerData = require('../providers/index.js').PROVIDERS[providerName];
         const baseUrl = this.provider.endpoint || providerData.baseUrl;
         const headers = providerData.headers(this.provider.apiKey);
 
-        const resp = await axios.post(`${baseUrl}/chat/completions`, {
-          model: this.provider.model,
+        const resp = await axios.post(`${baseUrl}/messages`, {
+          model: currentModel,
+          max_tokens: 2048,
           messages: [{
             role: 'user',
             content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}` } }
+              { type: 'image', source: { type: 'base64', media_type: 'image/png', data: base64 } },
+              { type: 'text', text: prompt }
             ]
-          }],
-          max_tokens: 2048
+          }]
         }, { headers, timeout: 60000 });
 
-        return { analysis: resp.data.choices[0].message.content, screenshot: imgPath };
+        return { analysis: resp.data.content[0].text, screenshot: imgPath };
       }
 
-      return { analysis: 'Vision analysis requires a vision-capable model (GPT-4o, Claude 3.5, etc.)', screenshot: imgPath };
+      // OpenAI-compatible (OpenRouter, OpenAI, etc.)
+      const axios = require('axios');
+      const providerData = require('../providers/index.js').PROVIDERS[providerName];
+      const baseUrl = this.provider.endpoint || providerData.baseUrl;
+      const headers = providerData.headers(this.provider.apiKey);
+
+      const resp = await axios.post(`${baseUrl}/chat/completions`, {
+        model: currentModel,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}` } }
+          ]
+        }],
+        max_tokens: 2048
+      }, { headers, timeout: 60000 });
+
+      return { analysis: resp.data.choices[0].message.content, screenshot: imgPath };
     } catch (err) {
       return { error: `Analysis failed: ${err.message}` };
     }

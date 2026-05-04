@@ -117,6 +117,7 @@ class OpenDesktopEngine {
       }
 
       try {
+        const startTime = Date.now();
         const processAnim = require('ora')({ text: `${this.aiName} thinking...`, spinner: 'dots2', color: 'red' }).start();
         const context = this.buildContext();
         const personaPrompt = this.persona.getSystemPrompt();
@@ -133,7 +134,7 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         processAnim.stop();
         console.log('\n' + this.formatResponse(response) + '\n');
         this.memory.addEvent({ type: 'chat', user: trimmed, assistant: response });
-        this.selfImprove.trackPerformance('responseTime', Date.now());
+        this.selfImprove.trackPerformance('responseTime', Date.now() - startTime);
       } catch (err) {
         console.log(chalk.hex('#FF0000')(`\n  ❌ Error: ${err.message}\n`));
       }
@@ -144,7 +145,11 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
     const recent = this.memory.getEvents({ limit: 5 });
     const stats = this.memory.getStats();
     const suggestions = this.learning.getSuggestions().slice(0, 3).map(s => s.suggestion).join(', ');
-    const recentCtx = recent.map(e => `[${e.timestamp}] ${e.type}: ${e.message || e.user || ''}`).join('\n');
+    const recentCtx = recent.map(e => {
+      const time = e.timestamp?.slice(11, 19) || '-';
+      const content = e.message || e.user || e.command || e.topic || e.type || '';
+      return `[${time}] ${e.type}: ${content}`;
+    }).join('\n');
     return `Platform: ${os.platform()}, Host: ${os.hostname()}, AI: ${this.aiName}, User: ${this.userName || 'User'}\nMemory: ${stats.episodicCount} events, ${stats.taskCount} tasks\nSuggestions: ${suggestions}\nRecent:\n${recentCtx}`;
   }
 

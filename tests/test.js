@@ -23,7 +23,7 @@ async function runTests() {
   test('Config: set/get', () => { const c = new Config(); c.set('t', 'v'); if (c.get('t') !== 'v') throw new Error(); });
 
   const ProviderRegistry = require('../src/providers/index.js');
-  test('Providers: 19 providers', () => { if (Object.keys(ProviderRegistry.PROVIDERS).length < 18) throw new Error(); });
+  test('Providers: 19 providers', () => { if (Object.keys(ProviderRegistry.PROVIDERS).length < 19) throw new Error(`Expected 19+, got ${Object.keys(ProviderRegistry.PROVIDERS).length}`); });
   test('Providers: lists models', () => { if (!new ProviderRegistry(new Config()).listModels().length) throw new Error(); });
 
   const MemorySystem = require('../src/memory/index.js');

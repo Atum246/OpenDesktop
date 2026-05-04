@@ -137,7 +137,20 @@ class WorkflowBuilder {
   _evaluateCondition(condition, context) {
     try {
       const interpolated = this._interpolate(condition, context);
-      return new Function('context', `with(context) { return ${interpolated}; }`)(context);
+      // Safe evaluation — only allow simple comparisons against context keys
+      const safeExpr = interpolated.replace(/[^a-zA-Z0-9\s_<>=!&|+\-*/.()"']/g, '');
+      // Simple expression evaluator for common patterns
+      const boolOps = { '==': (a, b) => a == b, '===': (a, b) => a === b, '!=': (a, b) => a != b, '!==': (a, b) => a !== b, '>': (a, b) => a > b, '<': (a, b) => a < b, '>=': (a, b) => a >= b, '<=': (a, b) => a <= b };
+      for (const [op, fn] of Object.entries(boolOps)) {
+        const parts = safeExpr.split(op);
+        if (parts.length === 2) {
+          const left = context[parts[0].trim()] ?? parts[0].trim();
+          const right = context[parts[1].trim()] ?? parts[1].trim();
+          return fn(left, right);
+        }
+      }
+      // Fallback: check if the expression is truthy in context
+      return !!context[interpolated.trim()];
     } catch { return true; }
   }
 

@@ -53,7 +53,7 @@ async function setup() {
     ]},
     { type: 'input', name: 'apiKey', message: chalk.hex('#FFD700')('🔑 API Key:'), when: a => a.provider !== 'skip' && a.provider !== 'ollama' && a.provider !== 'lmstudio' && a.provider !== 'vllm' },
     { type: 'input', name: 'endpoint', message: chalk.hex('#FFD700')('🔗 Endpoint URL:'), when: a => a.provider === 'custom' || a.provider === 'ollama' || a.provider === 'lmstudio' || a.provider === 'vllm', default: a => a.provider === 'ollama' ? 'http://localhost:11434' : a.provider === 'lmstudio' ? 'http://localhost:1234' : a.provider === 'vllm' ? 'http://localhost:8000' : '' },
-    { type: 'list', name: 'model', message: chalk.hex('#FFD700')('🎯 Default Model:'), choices: (a) => {
+    { type: 'list', name: 'model', message: chalk.hex('#FFD700')('🎯 Default Model:'), when: a => a.provider !== 'skip', choices: (a) => {
       const models = { openrouter: ['anthropic/claude-3.5-sonnet','openai/gpt-4o','google/gemini-pro-1.5','meta-llama/llama-3.1-405b-instruct'], openai: ['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1-preview'], anthropic: ['claude-3.5-sonnet-20241022','claude-3-opus-20240229','claude-3-haiku-20240307'], google: ['gemini-pro','gemini-1.5-pro','gemini-1.5-flash'], groq: ['llama-3.1-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'], nvidia: ['meta/llama-3.1-405b-instruct','meta/llama-3.1-70b-instruct'], ollama: ['llama3.1','llama3.1:70b','codellama','mistral','qwen2','deepseek-coder-v2'], lmstudio: ['local-model'], vllm: ['local-model'], custom: ['custom-model'] };
       return (models[a.provider] || ['default']).map(m => ({ name: m, value: m }));
     }},
@@ -77,7 +77,7 @@ async function setup() {
 
   const config = {
     version: '1.0.0', setupDate: new Date().toISOString(),
-    provider: { name: answers.provider, apiKey: answers.apiKey || null, endpoint: answers.endpoint || null, model: answers.model || models[answers.provider] || 'default' },
+    provider: { name: answers.provider === 'skip' ? 'openrouter' : answers.provider, apiKey: answers.apiKey || null, endpoint: answers.endpoint || null, model: answers.model || models[answers.provider] || 'anthropic/claude-3.5-sonnet' },
     features: { voice: answers.voice, vision: answers.vision, memory: answers.memory, automation: true, browser: true },
     theme: answers.theme,
     messaging: { enabled: answers.messaging, platforms: answers.platforms || [] },

@@ -105,7 +105,33 @@ class CodeExecutor {
   }
 
   async _compileAndRun(filepath, langConfig, options = {}) {
-    const outputFile = filepath.replace(/\.\w+$/, this.platform === 'win32' ? '.exe' : '');
+    const isJava = langConfig.cmd === 'javac';
+    let outputFile;
+
+    if (isJava) {
+      // Java: filename must match class name
+      const content = fs.readFileSync(filepath, 'utf8');
+      const classMatch = content.match(/public\s+class\s+(\w+)/);
+      const className = classMatch ? classMatch[1] : path.basename(filepath, '.java');
+      const javaDir = path.dirname(filepath);
+      const javaFile = path.join(javaDir, `${className}.java`);
+      if (javaFile !== filepath) fs.copyFileSync(filepath, javaFile);
+      outputFile = path.join(javaDir, `${className}.class`);
+
+      return new Promise((resolve) => {
+        exec(`javac "${javaFile}"`, { timeout: 30000 }, (compileErr, _, compileStderr) => {
+          if (compileErr) resolve({ success: false, error: `Compilation failed: ${compileErr.message}`, stderr: compileStderr });
+          else {
+            exec(`java -cp "${javaDir}" ${className}`, { timeout: options.timeout || 10000 }, (runErr, stdout, stderr) => {
+              if (runErr) resolve({ success: false, error: runErr.message, stdout, stderr });
+              else resolve({ success: true, output: stdout, warnings: stderr });
+            });
+          }
+        });
+      });
+    }
+
+    outputFile = filepath.replace(/\.\w+$/, this.platform === 'win32' ? '.exe' : '');
     const compileCmd = `${langConfig.cmd} "${filepath}" -o "${outputFile}"`;
 
     return new Promise((resolve) => {
@@ -130,10 +156,16 @@ class CodeExecutor {
     if (code.includes('print(') && code.includes('import ')) return 'python';
     if (code.includes('#include') && code.includes('int main')) return 'c';
     if (code.includes('#include') && code.includes('cout')) return 'cpp';
-    if (code.includes('public static void main')) return 'java';
+    if (code.includes('public static void main') || code.includes('public class ')) return 'java';
     if (code.includes('SELECT') || code.includes('INSERT') || code.includes('CREATE TABLE')) return 'sql';
     if (code.includes('<!DOCTYPE html>') || code.includes('<html>')) return 'html';
     if (code.includes('#!/bin/bash') || code.includes('#!/bin/sh')) return 'bash';
+    if (code.includes('interface ') && code.includes(': ') && code.includes('=>')) return 'typescript';
+    if (code.includes('def ') && code.includes('end')) return 'ruby';
+    if (code.includes('<?php') || code.includes('$')) return 'php';
+    if (code.includes('fun ') && code.includes('val ')) return 'kotlin';
+    if (code.includes('func ') && code.includes('import SwiftUI')) return 'swift';
+    if (code.includes('fn main()') && code.includes('println!')) return 'rust';
     return null;
   }
 

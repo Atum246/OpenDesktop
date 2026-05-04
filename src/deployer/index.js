@@ -57,7 +57,8 @@ class Deployer {
   }
 
   async _deployGitHubPages(projectPath, opts) {
-    const cmds = [`cd "${projectPath}"`, 'git init', 'git add -A', 'git commit -m "deploy"', `git remote add origin ${opts.repo || ''} 2>/dev/null`, 'git push -f origin main:gh-pages'];
+    if (!opts.repo) return { error: 'GitHub Pages requires opts.repo (e.g. https://github.com/user/repo.git)' };
+    const cmds = [`cd "${projectPath}"`, 'git init', 'git add -A', 'git commit -m "deploy" 2>/dev/null || true', `git remote add origin ${opts.repo} 2>/dev/null || git remote set-url origin ${opts.repo}`, 'git push -f origin main:gh-pages'];
     return this._run(cmds.join(' && '));
   }
 

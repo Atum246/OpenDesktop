@@ -60,6 +60,7 @@ class PersonaSystem {
 
   _buildSystemPrompt(options) {
     const parts = ['You are an AI desktop agent.'];
+    if (options.displayName) parts.push(`Your name is ${options.displayName}.`);
     if (options.tone) parts.push(`Your tone is ${options.tone}.`);
     if (options.traits?.length) parts.push(`Your traits: ${options.traits.join(', ')}.`);
     if (options.expertise?.length) parts.push(`You specialize in: ${options.expertise.join(', ')}.`);

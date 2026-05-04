@@ -26,6 +26,12 @@ const SkillCreator = require('../skill-creator/index.js');
 const WorkflowBuilder = require('../workflows/index.js');
 const PersonaSystem = require('../persona/index.js');
 const SettingsPage = require('../settings/index.js');
+const SelfImprovementEngine = require('../self-improve/index.js');
+const SubAgentSpawner = require('../sub-agents/index.js');
+const SocialMediaAutomation = require('../social-media/index.js');
+const DeepResearchSystem = require('../research/index.js');
+const AdaptiveInterface = require('../adaptive/index.js');
+const CodeRewriter = require('../code-rewriter/index.js');
 
 // ═══════════════════════════════════════════════════════════════
 //  OPENDESKTOP GUI — Rich Hybrid Interface 🖥️✨
@@ -48,6 +54,12 @@ class OpenDesktopGUI {
     this.workflows = new WorkflowBuilder(this.config, this.automation, this.provider);
     this.persona = new PersonaSystem(this.config, this.memory);
     this.settings = new SettingsPage(this.config, this);
+    this.selfImprove = new SelfImprovementEngine(this.config, this.memory, this.provider);
+    this.subAgents = new SubAgentSpawner(this.config, this.provider, this.memory);
+    this.socialMedia = new SocialMediaAutomation(this.config, this.provider, this.automation);
+    this.research = new DeepResearchSystem(this.config, this.provider, this.memory);
+    this.adaptive = new AdaptiveInterface(this.config, this.memory, this.learning);
+    this.codeRewriter = new CodeRewriter(this.config, this.provider, this.memory);
     this.chatHistory = [];
     this.currentView = 'chat';
     this.taskLog = [];
@@ -256,6 +268,7 @@ class OpenDesktopGUI {
     if (this.config.get('persona.active')) this.persona.activatePersona(this.config.get('persona.active'));
 
     while (true) {
+      const activePersona = this.persona.getActivePersona();
       const personaName = activePersona?.displayName || '🤖';
       const { input } = await inquirer.prompt([{
         type: 'input', name: 'input',
@@ -269,17 +282,21 @@ class OpenDesktopGUI {
 
       if (input.startsWith('/')) {
         if (input.startsWith('/settings')) { await this.settings.show(); continue; }
-        // Delegate to engine commands
-        const Engine = require('../core/engine.js');
-        const tempEngine = new Engine(this.config);
-        Object.assign(tempEngine, {
-          provider: this.provider, memory: this.memory, automation: this.automation,
-          vision: this.vision, plugins: this.plugins, messaging: this.messaging,
-          voice: this.voice, codeExecutor: this.codeExecutor, deployer: this.deployer,
-          learning: this.learning, skillCreator: this.skillCreator, workflows: this.workflows,
-          persona: this.persona, settings: this.settings
-        });
-        await tempEngine.handleCommand(input);
+        // Create engine once and reuse for command handling
+        if (!this._engine) {
+          const Engine = require('../core/engine.js');
+          this._engine = new Engine(this.config);
+          Object.assign(this._engine, {
+            provider: this.provider, memory: this.memory, automation: this.automation,
+            vision: this.vision, plugins: this.plugins, messaging: this.messaging,
+            voice: this.voice, codeExecutor: this.codeExecutor, deployer: this.deployer,
+            learning: this.learning, skillCreator: this.skillCreator, workflows: this.workflows,
+            persona: this.persona, settings: this.settings, selfImprove: this.selfImprove,
+            subAgents: this.subAgents, socialMedia: this.socialMedia, research: this.research,
+            adaptive: this.adaptive, codeRewriter: this.codeRewriter
+          });
+        }
+        await this._engine.handleCommand(input);
         continue;
       }
 

@@ -42,32 +42,54 @@ class MessagingHub {
   async _startTelegramPolling(token) {
     const axios = require('axios');
     let offset = 0;
+    let consecutiveErrors = 0;
+    const maxErrors = 10;
+
     const poll = async () => {
       try {
-        const resp = await axios.get(`https://api.telegram.org/bot${token}/getUpdates`, { params: { offset, timeout: 30 } });
+        const resp = await axios.get(`https://api.telegram.org/bot${token}/getUpdates`, {
+          params: { offset, timeout: 30 },
+          timeout: 60000
+        });
+        consecutiveErrors = 0;
         for (const update of resp.data.result) {
           offset = update.update_id + 1;
           if (update.message?.text) {
-            const response = await this.engine.chat(update.message.text);
-            await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
-              chat_id: update.message.chat.id, text: response, parse_mode: 'Markdown'
-            });
+            try {
+              const response = await this.engine.chat(update.message.text);
+              await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+                chat_id: update.message.chat.id, text: response, parse_mode: 'Markdown'
+              }).catch(() => {
+                // Fallback without markdown if parse fails
+                return axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+                  chat_id: update.message.chat.id, text: response
+                });
+              });
+            } catch (err) {
+              console.log(`[Telegram] Error processing message: ${err.message}`);
+            }
           }
         }
-      } catch {}
-      setTimeout(poll, 1000);
+      } catch (err) {
+        consecutiveErrors++;
+        if (consecutiveErrors >= maxErrors) {
+          console.log(`[Telegram] Too many errors (${consecutiveErrors}), stopping polling`);
+          return;
+        }
+      }
+      if (this.platforms.telegram?.active) setTimeout(poll, consecutiveErrors > 0 ? 5000 : 1000);
     };
     poll();
   }
 
   async _initDiscord() {
     const token = this.config.get('messaging.discord.token');
-    if (!token) return;
-    this.platforms.discord = { token, active: true, note: 'Use discord.js for full bot functionality' };
+    if (!token) { console.log('[Discord] No token configured. Set messaging.discord.token in settings.'); return; }
+    this.platforms.discord = { token, active: true, note: 'Install discord.js for full bot functionality: npm install discord.js' };
   }
 
   async _initWhatsApp() {
-    this.platforms.whatsapp = { active: false, note: 'WhatsApp integration via whatsapp-web.js — configure in settings' };
+    this.platforms.whatsapp = { active: false, note: 'WhatsApp integration requires whatsapp-web.js. Configure in settings.' };
   }
 
   async _initSlack() {

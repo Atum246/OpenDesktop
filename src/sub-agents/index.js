@@ -51,6 +51,8 @@ class SubAgentSpawner {
     if (!agent) return;
 
     agent.status = 'running';
+    let consecutiveErrors = 0;
+    const maxConsecutiveErrors = 3;
 
     try {
       while (agent.currentIteration < agent.maxIterations && agent.status === 'running') {
@@ -63,17 +65,28 @@ Previous results: ${JSON.stringify(agent.results.slice(-3))}
 
 Be focused, efficient, and provide actionable results. If the task is complete, say "TASK_COMPLETE" and summarize what was accomplished.`;
 
-        const response = await this.provider.chat(
-          `Continue working on your task. Current iteration ${agent.currentIteration}. ${agent.results.length ? 'Previous result: ' + agent.results[agent.results.length - 1]?.summary : 'Starting fresh.'}`,
-          { systemPrompt, model: agent.model, maxTokens: 2048 }
-        );
+        try {
+          const response = await this.provider.chat(
+            `Continue working on your task. Current iteration ${agent.currentIteration}. ${agent.results.length ? 'Previous result: ' + agent.results[agent.results.length - 1]?.summary : 'Starting fresh.'}`,
+            { systemPrompt, model: agent.model, maxTokens: 2048 }
+          );
 
-        agent.results.push({ iteration: agent.currentIteration, result: response, timestamp: new Date().toISOString() });
-        agent.memory.push({ role: 'assistant', content: response });
+          consecutiveErrors = 0;
+          agent.results.push({ iteration: agent.currentIteration, result: response, timestamp: new Date().toISOString() });
+          agent.memory.push({ role: 'assistant', content: response });
 
-        if (response.includes('TASK_COMPLETE')) {
-          agent.status = 'completed';
-          break;
+          if (response.includes('TASK_COMPLETE')) {
+            agent.status = 'completed';
+            break;
+          }
+        } catch (err) {
+          consecutiveErrors++;
+          agent.results.push({ iteration: agent.currentIteration, error: err.message, timestamp: new Date().toISOString() });
+          if (consecutiveErrors >= maxConsecutiveErrors) {
+            agent.status = 'error';
+            agent.error = `Too many consecutive errors: ${err.message}`;
+            break;
+          }
         }
 
         // Brief pause between iterations
