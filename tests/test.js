@@ -112,7 +112,8 @@ async function runTests() {
     ['provider', 'memory', 'automation', 'vision', 'plugins', 'messaging', 'hotkey', 'voice',
      'codeExecutor', 'deployer', 'learning', 'skillCreator', 'workflows', 'persona', 'settings',
      'selfImprove', 'subAgents', 'socialMedia', 'research', 'adaptive', 'codeRewriter',
-     'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer']
+     'webSearch', 'iot', 'security', 'installer', 'orchestrator', 'modelTrainer',
+     'brain', 'proactive', 'osIntegration', 'visualUnderstanding', 'evolution', 'apiGateway', 'codeIntel', 'trustSafety']
       .forEach(s => { if (!e[s]) throw new Error(`Missing: ${s}`); });
   });
   test('Engine: AI name config', () => { const e = new Engine(); if (!e.aiName) throw new Error(); });
@@ -150,12 +151,59 @@ async function runTests() {
   test('ModelTrainer: init', () => { new ModelTrainer(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); });
   test('ModelTrainer: hosting suggestions', () => { const m = new ModelTrainer(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); if (!m.suggestHosting('small').suggestions.length) throw new Error(); });
 
+  // === LEGENDARY FEATURES ===
+  const ContextualBrain = require('../src/brain/index.js');
+  test('Brain: init', () => { new ContextualBrain(new Config(), new MemorySystem(new Config())); });
+  test('Brain: add node', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); const id = b.addNode('fact', 'test fact'); if (!id) throw new Error(); });
+  test('Brain: query', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); b.addNode('fact', 'javascript is great'); const r = b.query('javascript'); if (!r.length) throw new Error(); });
+  test('Brain: learn preference', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); b.learnPreference('color', 'blue'); });
+  test('Brain: stats', () => { const b = new ContextualBrain(new Config(), new MemorySystem(new Config())); if (!('totalNodes' in b.getStats())) throw new Error(); });
+
+  const ProactiveEngine = require('../src/proactive/index.js');
+  test('Proactive: init', () => { new ProactiveEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); });
+  test('Proactive: status', () => { const p = new ProactiveEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); if (!('running' in p.getStatus())) throw new Error(); });
+  test('Proactive: add rule', () => { const p = new ProactiveEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new AutomationEngine(new Config()), new ProviderRegistry(new Config())); p.addRule('test', 'true', 'echo test'); });
+
+  const DeepOSIntegration = require('../src/os-integration/index.js');
+  test('OS Integration: init', () => { new DeepOSIntegration(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config()))); });
+  test('OS Integration: status', () => { const o = new DeepOSIntegration(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config()))); if (!('platform' in o.getStatus())) throw new Error(); });
+  test('OS Integration: clipboard type detection', () => { const o = new DeepOSIntegration(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config()))); if (o._detectContentType('https://example.com') !== 'url') throw new Error(); });
+
+  const VisualUnderstanding = require('../src/visual-understanding/index.js');
+  test('Visual Understanding: init', () => { new VisualUnderstanding(new Config(), new ProviderRegistry(new Config()), new VisionSystem(new Config(), new ProviderRegistry(new Config()))); });
+  test('Visual Understanding: status', () => { const v = new VisualUnderstanding(new Config(), new ProviderRegistry(new Config()), new VisionSystem(new Config(), new ProviderRegistry(new Config()))); if (!('visualMemorySize' in v.getStatus())) throw new Error(); });
+
+  const EvolutionEngine = require('../src/evolution/index.js');
+  test('Evolution: init', () => { new EvolutionEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new ProviderRegistry(new Config())); });
+  test('Evolution: log interaction', () => { const e = new EvolutionEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new ProviderRegistry(new Config())); e.logInteraction({ type: 'test', input: 'hi', output: 'hello' }); });
+  test('Evolution: learn correction', () => { const e = new EvolutionEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new ProviderRegistry(new Config())); e.learnCorrection('wrong', 'right', 'test'); });
+  test('Evolution: performance report', () => { const e = new EvolutionEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new ProviderRegistry(new Config())); if (!('total' in e.getPerformanceReport())) throw new Error(); });
+  test('Evolution: version', () => { const e = new EvolutionEngine(new Config(), new ContextualBrain(new Config(), new MemorySystem(new Config())), new MemorySystem(new Config()), new ProviderRegistry(new Config())); if (!e.versionStr) throw new Error(); });
+
+  const APIGateway = require('../src/api-gateway/index.js');
+  test('API Gateway: init', () => { new APIGateway(new Config(), {}); });
+  test('API Gateway: status', () => { const a = new APIGateway(new Config(), {}); if (!('routes' in a.getStatus())) throw new Error(); });
+  test('API Gateway: routes registered', () => { const a = new APIGateway(new Config(), {}); if (a.routes.size < 5) throw new Error(); });
+
+  const CodeIntelligence = require('../src/code-intelligence/index.js');
+  test('Code Intelligence: init', () => { new CodeIntelligence(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); });
+  test('Code Intelligence: status', () => { const c = new CodeIntelligence(new Config(), new ProviderRegistry(new Config()), new MemorySystem(new Config())); if (!('filesIndexed' in c.getStatus())) throw new Error(); });
+
+  const TrustSafety = require('../src/trust-safety/index.js');
+  test('Trust & Safety: init', () => { new TrustSafety(new Config(), new SecurityModule(new Config())); });
+  test('Trust & Safety: mode', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); if (t.getMode().mode !== 'safe') throw new Error(); });
+  test('Trust & Safety: set mode', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); t.setMode('full'); if (t.mode !== 'full') throw new Error(); });
+  test('Trust & Safety: risk assessment', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); if (t._assessRisk({ description: 'read file' }) !== 'low') throw new Error(); });
+  test('Trust & Safety: rollback stack', () => { const t = new TrustSafety(new Config(), new SecurityModule(new Config())); if (!Array.isArray(t.getRollbackStack())) throw new Error(); });
+
   // === STRUCTURE ===
   test('Structure: ALL 30 module dirs', () => {
     ['core', 'providers', 'vision', 'automation', 'memory', 'messaging', 'gui', 'cli', 'plugins',
      'hotkey', 'voice', 'code-executor', 'deployer', 'learning', 'skill-creator', 'workflows',
      'persona', 'settings', 'self-improve', 'sub-agents', 'social-media', 'research', 'adaptive',
-     'code-rewriter', 'web-search', 'iot', 'security', 'program-installer', 'orchestrator', 'model-trainer']
+     'code-rewriter', 'web-search', 'iot', 'security', 'program-installer', 'orchestrator', 'model-trainer',
+     'brain', 'proactive', 'os-integration', 'visual-understanding', 'evolution', 'api-gateway',
+     'code-intelligence', 'trust-safety']
       .forEach(d => { if (!fs.existsSync(path.join(__dirname, '..', 'src', d))) throw new Error(`Missing: src/${d}`); });
   });
 

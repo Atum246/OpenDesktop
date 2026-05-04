@@ -33,6 +33,14 @@ const SecurityModule = require('../security/index.js');
 const ProgramInstaller = require('../program-installer/index.js');
 const AgentOrchestrator = require('../orchestrator/index.js');
 const ModelTrainer = require('../model-trainer/index.js');
+const ContextualBrain = require('../brain/index.js');
+const ProactiveEngine = require('../proactive/index.js');
+const DeepOSIntegration = require('../os-integration/index.js');
+const VisualUnderstanding = require('../visual-understanding/index.js');
+const EvolutionEngine = require('../evolution/index.js');
+const APIGateway = require('../api-gateway/index.js');
+const CodeIntelligence = require('../code-intelligence/index.js');
+const TrustSafety = require('../trust-safety/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -64,9 +72,24 @@ class OpenDesktopEngine {
     this.installer = new ProgramInstaller(this.config);
     this.orchestrator = new AgentOrchestrator(this.config, this.provider, this.memory);
     this.modelTrainer = new ModelTrainer(this.config, this.provider, this.memory);
+
+    // ═══ LEGENDARY FEATURES ═══
+    this.brain = new ContextualBrain(this.config, this.memory);
+    this.proactive = new ProactiveEngine(this.config, this.brain, this.memory, this.automation, this.provider);
+    this.osIntegration = new DeepOSIntegration(this.config, this.brain);
+    this.visualUnderstanding = new VisualUnderstanding(this.config, this.provider, this.vision);
+    this.evolution = new EvolutionEngine(this.config, this.brain, this.memory, this.provider);
+    this.apiGateway = new APIGateway(this.config, this);
+    this.codeIntel = new CodeIntelligence(this.config, this.provider, this.memory);
+    this.trustSafety = new TrustSafety(this.config, this.security);
+
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
     this.isRunning = false;
+
+    // Start proactive monitoring
+    this.proactive.start();
+    this.osIntegration.start();
   }
 
   _onHotkey() {
@@ -153,6 +176,10 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
         processAnim.stop();
         console.log('\n' + this.formatResponse(response) + '\n');
         this.memory.addEvent({ type: 'chat', user: trimmed, assistant: response });
+
+        // Learn from interaction
+        this.brain.learnFromConversation(trimmed, response);
+        this.evolution.logInteraction({ type: 'chat', input: trimmed, output: response, success: true, duration: Date.now() - startTime, model: this.provider.model });
         this.selfImprove.trackPerformance('responseTime', Date.now() - startTime);
       } catch (err) {
         console.log(chalk.hex('#FF0000')(`\n  ❌ Error: ${err.message}\n`));
@@ -169,7 +196,20 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
       const content = e.message || e.user || e.command || e.topic || e.type || '';
       return `[${time}] ${e.type}: ${content}`;
     }).join('\n');
-    return `Platform: ${os.platform()}, Host: ${os.hostname()}, AI: ${this.aiName}, User: ${this.userName || 'User'}\nMemory: ${stats.episodicCount} events, ${stats.taskCount} tasks\nSuggestions: ${suggestions}\nRecent:\n${recentCtx}`;
+
+    // Brain context — weighted knowledge graph
+    const brainContext = this.brain.getContextSummary(500);
+
+    // Proactive insights
+    const insights = this.proactive.getActiveInsights().slice(0, 3);
+    const insightStr = insights.length ? '\nInsights: ' + insights.map(i => i.message).join('; ') : '';
+
+    // Evolution status
+    const evoStatus = this.evolution.getStatus();
+    const corrections = this.evolution.getRelevantCorrections(recent.map(e => e.message || '').join(' '), 2);
+    const correctionStr = corrections.length ? '\nRecent corrections: ' + corrections.map(c => `I said "${c.original.slice(0, 50)}" but should have said "${c.corrected.slice(0, 50)}"`).join('; ') : '';
+
+    return `Platform: ${os.platform()}, Host: ${os.hostname()}, AI: ${this.aiName}, User: ${this.userName || 'User'}\nMemory: ${stats.episodicCount} events, ${stats.taskCount} tasks\nBrain: ${brainContext ? 'Active' : 'Empty'} | Evolution: v${evoStatus.version} | Score: ${evoStatus.improvementScore}\nSuggestions: ${suggestions}${insightStr}${correctionStr}\nRecent:\n${recentCtx}`;
   }
 
   formatResponse(text) {
@@ -276,7 +316,65 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
           chalk.hex('#FF0000')('═══ WEB SEARCH ═══'),
           chalk.hex('#00FFFF')('/web-search <query>') + chalk.hex('#888888')('     — Web search'),
           chalk.hex('#00FFFF')('/deep-search <topic>') + chalk.hex('#888888')('    — Deep search'),
-          chalk.hex('#00FFFF')('/scrape <url>') + chalk.hex('#888888')('          — Scrape URL')
+          chalk.hex('#00FFFF')('/scrape <url>') + chalk.hex('#888888')('          — Scrape URL'),
+          '',
+          chalk.hex('#FF0000')('═══ 🧠 BRAIN ═══'),
+          chalk.hex('#00FFFF')('/brain') + chalk.hex('#888888')('              — Brain status'),
+          chalk.hex('#00FFFF')('/brain-query <q>') + chalk.hex('#888888')('      — Query knowledge graph'),
+          chalk.hex('#00FFFF')('/brain-decay') + chalk.hex('#888888')('         — Forget unimportant'),
+          chalk.hex('#00FFFF')('/brain-consolidate') + chalk.hex('#888888')('   — Merge duplicates'),
+          '',
+          chalk.hex('#FF0000')('═══ 🔮 PROACTIVE ═══'),
+          chalk.hex('#00FFFF')('/proactive') + chalk.hex('#888888')('          — Proactive status'),
+          chalk.hex('#00FFFF')('/insights') + chalk.hex('#888888')('           — Active insights'),
+          chalk.hex('#00FFFF')('/add-rule <a> when <c>') + chalk.hex('#888888')(' — Add automation rule'),
+          '',
+          chalk.hex('#FF0000')('═══ 🖥️ OS INTEGRATION ═══'),
+          chalk.hex('#00FFFF')('/os') + chalk.hex('#888888')('                — OS status'),
+          chalk.hex('#00FFFF')('/watch <dir>') + chalk.hex('#888888')('         — Watch directory'),
+          chalk.hex('#00FFFF')('/active-window') + chalk.hex('#888888')('      — Current window'),
+          chalk.hex('#00FFFF')('/open-windows') + chalk.hex('#888888')('      — List windows'),
+          chalk.hex('#00FFFF')('/sys-events') + chalk.hex('#888888')('         — System events'),
+          chalk.hex('#00FFFF')('/lock') + chalk.hex('#888888')('              — Lock screen'),
+          chalk.hex('#00FFFF')('/sleep') + chalk.hex('#888888')('             — Sleep'),
+          chalk.hex('#00FFFF')('/empty-trash') + chalk.hex('#888888')('       — Empty trash'),
+          '',
+          chalk.hex('#FF0000')('═══ 👁️ VISUAL ═══'),
+          chalk.hex('#00FFFF')('/find-element <desc>') + chalk.hex('#888888')('  — Find UI element'),
+          chalk.hex('#00FFFF')('/click <desc>') + chalk.hex('#888888')('        — Click element'),
+          chalk.hex('#00FFFF')('/type-at <el> <text>') + chalk.hex('#888888')('  — Type at element'),
+          chalk.hex('#00FFFF')('/screen-diff') + chalk.hex('#888888')('         — Compare screenshots'),
+          chalk.hex('#00FFFF')('/read-screen') + chalk.hex('#888888')('        — Read screen text'),
+          '',
+          chalk.hex('#FF0000')('═══ 🧬 EVOLUTION ═══'),
+          chalk.hex('#00FFFF')('/evolve') + chalk.hex('#888888')('             — Trigger evolution'),
+          chalk.hex('#00FFFF')('/evolution') + chalk.hex('#888888')('          — Evolution status'),
+          chalk.hex('#00FFFF')('/correct <w> → <r>') + chalk.hex('#888888')('    — Teach correction'),
+          chalk.hex('#00FFFF')('/skills') + chalk.hex('#888888')('             — View skills'),
+          '',
+          chalk.hex('#FF0000')('═══ 🌐 API GATEWAY ═══'),
+          chalk.hex('#00FFFF')('/api') + chalk.hex('#888888')('                — API status'),
+          chalk.hex('#00FFFF')('/api-start') + chalk.hex('#888888')('          — Start API server'),
+          chalk.hex('#00FFFF')('/api-stop') + chalk.hex('#888888')('           — Stop API server'),
+          chalk.hex('#00FFFF')('/api-key <key>') + chalk.hex('#888888')('       — Add API key'),
+          chalk.hex('#00FFFF')('/webhook <n> <u>') + chalk.hex('#888888')('      — Register webhook'),
+          chalk.hex('#00FFFF')('/broadcast <e> <d>') + chalk.hex('#888888')('    — WebSocket broadcast'),
+          '',
+          chalk.hex('#FF0000')('═══ 💻 CODE INTEL ═══'),
+          chalk.hex('#00FFFF')('/code-review <file>') + chalk.hex('#888888')('  — Review code'),
+          chalk.hex('#00FFFF')('/code-explain <file>') + chalk.hex('#888888')(' — Understand code'),
+          chalk.hex('#00FFFF')('/generate-tests <f>') + chalk.hex('#888888')('  — Generate tests'),
+          chalk.hex('#00FFFF')('/debug <error>') + chalk.hex('#888888')('        — Debug error'),
+          chalk.hex('#00FFFF')('/analyze-codebase <d>') + chalk.hex('#888888')(' — Analyze codebase'),
+          '',
+          chalk.hex('#FF0000')('═══ 🛡️ TRUST & SAFETY ═══'),
+          chalk.hex('#00FFFF')('/trust') + chalk.hex('#888888')('             — Trust status'),
+          chalk.hex('#00FFFF')('/trust-mode <mode>') + chalk.hex('#888888')('   — Set mode'),
+          chalk.hex('#00FFFF')('/sandbox on|off') + chalk.hex('#888888')('      — Toggle sandbox'),
+          chalk.hex('#00FFFF')('/rollbacks') + chalk.hex('#888888')('          — List rollbacks'),
+          chalk.hex('#00FFFF')('/rollback <id>') + chalk.hex('#888888')('      — Undo action'),
+          chalk.hex('#00FFFF')('/approvals') + chalk.hex('#888888')('          — Pending approvals'),
+          chalk.hex('#00FFFF')('/trust-log') + chalk.hex('#888888')('          — Audit trail')
         ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red', title: `⚡ ${this.aiName} Help`, titleAlignment: 'center' }));
         break;
 
@@ -696,6 +794,413 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
           console.log(chalk.hex('#708090')(`    ${s.bestFor}`));
         });
         console.log(chalk.hex('#FFD700')(`\n💡 Recommendation: ${suggestions.recommendation}`));
+        break;
+      }
+
+      // ═══ BRAIN — Knowledge Graph ═══
+      case '/brain': {
+        const stats = this.brain.getStats();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🧠 Contextual Brain'),
+          '',
+          chalk.hex('#00FFFF')('Nodes: ') + stats.totalNodes,
+          chalk.hex('#00FFFF')('Edges: ') + stats.totalEdges,
+          chalk.hex('#00FFFF')('Index size: ') + stats.indexSize,
+          chalk.hex('#00FFFF')('Avg weight: ') + stats.avgWeight?.toFixed(2),
+          chalk.hex('#00FFFF')('Types: ') + JSON.stringify(stats.types),
+          '',
+          chalk.hex('#888888')('  /brain-query <q> — Query the brain'),
+          chalk.hex('#888888')('  /brain-decay     — Forget unimportant things'),
+          chalk.hex('#888888')('  /brain-consolidate — Merge duplicates')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/brain-query': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /brain-query <query>')); break; }
+        const results = this.brain.query(args);
+        console.log(chalk.hex('#00FF40')(`🧠 Found ${results.length} results:\n`));
+        results.forEach((r, i) => {
+          console.log(chalk.hex('#00FFFF')(`  ${i + 1}. [${r.type}]`) + ` ${r.content.slice(0, 100)}`);
+          console.log(chalk.hex('#888888')(`     Weight: ${r.weight.toFixed(2)} | Score: ${r.score.toFixed(2)} | Accessed: ${r.accessCount}x`));
+        });
+        break;
+      }
+
+      case '/brain-decay': {
+        const decay = this.brain.decay();
+        console.log(chalk.hex('#00FF40')(`🧠 Decay complete. Forgotten: ${decay.forgotten}, Remaining: ${decay.remaining}`));
+        break;
+      }
+
+      case '/brain-consolidate': {
+        const consolidated = this.brain.consolidate();
+        console.log(chalk.hex('#00FF40')(`🧠 Consolidated. Merged: ${consolidated.merged}, Remaining: ${consolidated.remaining}`));
+        break;
+      }
+
+      // ═══ PROACTIVE INTELLIGENCE ═══
+      case '/proactive': {
+        const status = this.proactive.getStatus();
+        const insights = this.proactive.getActiveInsights();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔮 Proactive Intelligence'),
+          '',
+          chalk.hex('#00FFFF')('Running: ') + (status.running ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('Rules: ') + status.rules + ' (' + status.activeRules + ' active)',
+          chalk.hex('#00FFFF')('Patterns: ') + status.patterns,
+          chalk.hex('#00FFFF')('Insights: ') + status.activeInsights,
+          chalk.hex('#00FFFF')('Monitors: ') + status.monitors,
+          '',
+          chalk.hex('#FF0000')('═══ ACTIVE INSIGHTS ═══'),
+          ...insights.map(i => chalk.hex('#FFD700')('  🔔 ') + i.message)
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/add-rule': {
+        const parts = args.split(' when ');
+        if (parts.length < 2) { console.log(chalk.hex('#FF0000')('Usage: /add-rule <action> when <condition>')); break; }
+        const rule = this.proactive.addRule('custom-rule', parts[1].trim(), parts[0].trim());
+        console.log(chalk.hex('#00FF40')(`✅ Rule added: ${rule.id}`));
+        break;
+      }
+
+      case '/insights': {
+        const insights = this.proactive.getActiveInsights();
+        if (!insights.length) console.log(chalk.hex('#888888')('  No active insights.'));
+        else insights.forEach(i => console.log(chalk.hex('#FFD700')('  🔔 ') + i.message));
+        break;
+      }
+
+      // ═══ DEEP OS INTEGRATION ═══
+      case '/os': {
+        const osStatus = this.osIntegration.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🖥️ Deep OS Integration'),
+          '',
+          chalk.hex('#00FFFF')('Running: ') + (osStatus.running ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('File watchers: ') + osStatus.fileWatchers,
+          chalk.hex('#00FFFF')('Clipboard entries: ') + osStatus.clipboardEntries,
+          chalk.hex('#00FFFF')('System events: ') + osStatus.systemEvents,
+          chalk.hex('#00FFFF')('Platform: ') + osStatus.platform,
+          '',
+          chalk.hex('#888888')('  /watch <dir>     — Watch directory for changes'),
+          chalk.hex('#888888')('  /clipboard       — Clipboard history'),
+          chalk.hex('#888888')('  /active-window   — Current active window'),
+          chalk.hex('#888888')('  /open-windows    — List open windows'),
+          chalk.hex('#888888')('  /sys-events      — System events log'),
+          chalk.hex('#888888')('  /lock            — Lock screen'),
+          chalk.hex('#888888')('  /sleep           — Sleep/hibernate'),
+          chalk.hex('#888888')('  /empty-trash     — Empty trash')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/watch': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /watch <directory>')); break; }
+        const watchResult = this.osIntegration.watchDirectory(args);
+        console.log(watchResult.watching ? chalk.hex('#00FF40')(`✅ Watching: ${args}`) : chalk.hex('#FF0000')(`❌ ${watchResult.error}`));
+        break;
+      }
+
+      case '/active-window': {
+        const win = await this.osIntegration.getActiveWindow();
+        console.log(win ? chalk.hex('#00FFFF')(`🪟 ${win.title}`) : chalk.hex('#888888')('  Could not detect active window'));
+        break;
+      }
+
+      case '/open-windows': {
+        const windows = await this.osIntegration.getOpenWindows();
+        if (!windows.length) console.log(chalk.hex('#888888')('  No windows detected'));
+        else windows.forEach(w => console.log(chalk.hex('#00FFFF')(`  🪟 ${w.title}`)));
+        break;
+      }
+
+      case '/sys-events': {
+        const events = this.osIntegration.getSystemEvents();
+        if (!events.length) console.log(chalk.hex('#888888')('  No system events'));
+        else events.forEach(e => console.log(chalk.hex('#888888')(`  [${new Date(e.timestamp).toLocaleTimeString()}]`) + ` ${e.type}: ${e.message}`));
+        break;
+      }
+
+      case '/lock': await this.osIntegration.lockScreen(); console.log(chalk.hex('#00FF40')('🔒 Screen locked')); break;
+      case '/sleep': await this.osIntegration.sleep(); console.log(chalk.hex('#00FF40')('😴 Sleeping...')); break;
+      case '/empty-trash': {
+        const trash = await this.osIntegration.emptyTrash();
+        console.log(trash.error ? chalk.hex('#FF0000')(`❌ ${trash.error}`) : chalk.hex('#00FF40')('🗑️ Trash emptied'));
+        break;
+      }
+
+      // ═══ VISUAL UNDERSTANDING ═══
+      case '/find-element': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /find-element <description>')); break; }
+        const element = await this.visualUnderstanding.findElement(args);
+        console.log(element.found
+          ? chalk.hex('#00FF40')(`✅ Found at (${element.x}, ${element.y}) — confidence: ${element.confidence}`)
+          : chalk.hex('#FF0000')(`❌ Not found: ${args}`));
+        break;
+      }
+
+      case '/click': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /click <element description>')); break; }
+        const clickResult = await this.visualUnderstanding.clickElement(args, this.automation);
+        console.log(clickResult.clicked ? chalk.hex('#00FF40')(`✅ Clicked at (${clickResult.x}, ${clickResult.y})`) : chalk.hex('#FF0000')(`❌ ${clickResult.error}`));
+        break;
+      }
+
+      case '/type-at': {
+        const [elementDesc, ...textParts] = args.split(' ');
+        const text = textParts.join(' ');
+        if (!elementDesc || !text) { console.log(chalk.hex('#FF0000')('Usage: /type-at <element> <text>')); break; }
+        const typeResult = await this.visualUnderstanding.typeAtElement(elementDesc, text, this.automation);
+        console.log(typeResult.typed ? chalk.hex('#00FF40')(`✅ Typed at ${elementDesc}`) : chalk.hex('#FF0000')(`❌ ${typeResult.error}`));
+        break;
+      }
+
+      case '/screen-diff': {
+        const shots = this.visualUnderstanding.screenHistory;
+        if (shots.length < 2) { console.log(chalk.hex('#FF0000')('Need at least 2 screenshots. Use /screen first.')); break; }
+        const diff = await this.visualUnderstanding.diffScreens(shots[shots.length - 2].path, shots[shots.length - 1].path);
+        console.log(chalk.hex('#00FFFF')('📊 Changes:\n') + diff.changes);
+        break;
+      }
+
+      case '/read-screen': {
+        const text = await this.visualUnderstanding.readScreen();
+        console.log(chalk.hex('#00FFFF')('📖 Screen text:\n') + (text || 'No text detected'));
+        break;
+      }
+
+      // ═══ SELF-EVOLUTION ═══
+      case '/evolve': {
+        const spin = ora('🧬 Evolving...').start();
+        const evoResult = await this.evolution.evolve();
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Evolution v${evoResult.version} complete!`));
+        console.log(chalk.hex('#00FFFF')(`  Score: ${evoResult.improvementScore}/100`));
+        console.log(chalk.hex('#00FFFF')(`  Findings: ${evoResult.findings.length}`));
+        evoResult.findings.forEach(f => console.log(chalk.hex('#888888')(`    • ${f.message}`)));
+        if (evoResult.suggestions.length) {
+          console.log(chalk.hex('#FFD700')('\n  💡 Suggestions:'));
+          evoResult.suggestions.forEach(s => console.log(chalk.hex('#888888')(`    • ${s.suggestion}`)));
+        }
+        break;
+      }
+
+      case '/evolution': {
+        const evoStatus = this.evolution.getStatus();
+        const report = this.evolution.getPerformanceReport('24h');
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🧬 Self-Evolution System'),
+          '',
+          chalk.hex('#00FFFF')('Version: ') + evoStatus.version,
+          chalk.hex('#00FFFF')('Score: ') + evoStatus.improvementScore + '/100',
+          chalk.hex('#00FFFF')('Interactions: ') + evoStatus.totalInteractions,
+          chalk.hex('#00FFFF')('Corrections: ') + evoStatus.corrections,
+          chalk.hex('#00FFFF')('Skills: ') + evoStatus.skills,
+          chalk.hex('#00FFFF')('Experiments: ') + evoStatus.experiments,
+          '',
+          chalk.hex('#FF0000')('═══ 24H PERFORMANCE ═══'),
+          chalk.hex('#00FFFF')('Success rate: ') + (report.successRate || 0) + '%',
+          chalk.hex('#00FFFF')('Avg duration: ') + (report.avgDuration || 0) + 'ms',
+          chalk.hex('#00FFFF')('Total tokens: ') + (report.totalTokens || 0)
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/correct': {
+        const [original, ...correctedParts] = args.split(' → ');
+        const corrected = correctedParts.join(' → ');
+        if (!original || !corrected) { console.log(chalk.hex('#FF0000')('Usage: /correct <wrong> → <right>')); break; }
+        this.evolution.learnCorrection(original.trim(), corrected.trim());
+        console.log(chalk.hex('#00FF40')('✅ Correction learned! I\'ll remember this.'));
+        break;
+      }
+
+      case '/skills': {
+        const skillCandidates = this.evolution.detectSkillCandidates();
+        const crystallized = [...this.evolution.skills.values()];
+        console.log(chalk.hex('#00FF40')(`🧩 Crystallized Skills (${crystallized.length}):`));
+        crystallized.forEach(s => console.log(chalk.hex('#00FFFF')(`  ⚡ ${s.name}`) + chalk.hex('#888888')(` — used ${s.usageCount}x`)));
+        if (skillCandidates.length) {
+          console.log(chalk.hex('#FFD700')(`\n  💡 Candidates (${skillCandidates.length}):`));
+          skillCandidates.slice(0, 5).forEach(c => console.log(chalk.hex('#888888')(`    • "${c.pattern}" (${c.frequency}x, ${c.successRate}% success)`)));
+        }
+        break;
+      }
+
+      // ═══ API GATEWAY ═══
+      case '/api': {
+        const apiStatus = this.apiGateway.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🌐 API Gateway'),
+          '',
+          chalk.hex('#00FFFF')('Running: ') + (apiStatus.running ? '✅' : '❌'),
+          chalk.hex('#00FFFF')('Port: ') + apiStatus.port,
+          chalk.hex('#00FFFF')('Routes: ') + apiStatus.routes,
+          chalk.hex('#00FFFF')('WebSocket clients: ') + apiStatus.wsClients,
+          chalk.hex('#00FFFF')('Webhooks: ') + apiStatus.webhooks,
+          chalk.hex('#00FFFF')('API keys: ') + apiStatus.apiKeys,
+          chalk.hex('#00FFFF')('Total requests: ') + apiStatus.totalRequests,
+          '',
+          chalk.hex('#888888')('  /api-start      — Start API server'),
+          chalk.hex('#888888')('  /api-stop       — Stop API server'),
+          chalk.hex('#888888')('  /api-key <key>  — Add API key'),
+          chalk.hex('#888888')('  /webhook <name> <url> — Register webhook'),
+          chalk.hex('#888888')('  /broadcast <event> <data> — WebSocket broadcast')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/api-start': {
+        const startResult = this.apiGateway.start();
+        console.log(startResult.started ? chalk.hex('#00FF40')(`✅ API server started on port ${startResult.port}`) : chalk.hex('#FF0000')(`❌ ${startResult.error}`));
+        break;
+      }
+
+      case '/api-stop': {
+        this.apiGateway.stop();
+        console.log(chalk.hex('#00FF40')('✅ API server stopped'));
+        break;
+      }
+
+      case '/api-key': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /api-key <key>')); break; }
+        this.apiGateway.addApiKey(args);
+        console.log(chalk.hex('#00FF40')('✅ API key added'));
+        break;
+      }
+
+      case '/webhook': {
+        const [whName, whUrl] = args.split(' ');
+        if (!whName || !whUrl) { console.log(chalk.hex('#FF0000')('Usage: /webhook <name> <url>')); break; }
+        this.apiGateway.registerWebhook(whName, whUrl);
+        console.log(chalk.hex('#00FF40')(`✅ Webhook registered: ${whName} → ${whUrl}`));
+        break;
+      }
+
+      case '/broadcast': {
+        const [eventName, ...dataParts] = args.split(' ');
+        if (!eventName) { console.log(chalk.hex('#FF0000')('Usage: /broadcast <event> <data>')); break; }
+        const bcResult = this.apiGateway.broadcast(eventName, dataParts.join(' '));
+        console.log(chalk.hex('#00FF40')(`✅ Broadcast sent to ${bcResult.clients} clients`));
+        break;
+      }
+
+      // ═══ CODE INTELLIGENCE ═══
+      case '/code-review': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /code-review <file>')); break; }
+        const spin = ora('🔍 Reviewing code...').start();
+        const review = await this.codeIntel.reviewCode(args);
+        spin.stop();
+        console.log(review.review);
+        break;
+      }
+
+      case '/code-explain': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /code-explain <file>')); break; }
+        const understanding = await this.codeIntel.understandFile(args);
+        console.log(understanding.understanding);
+        break;
+      }
+
+      case '/generate-tests': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /generate-tests <file>')); break; }
+        const spin = ora('🧪 Generating tests...').start();
+        const tests = await this.codeIntel.generateTests(args, { save: true });
+        spin.stop();
+        console.log(tests.saved ? chalk.hex('#00FF40')(`✅ Tests saved: ${tests.testFile}`) : chalk.hex('#FF0000')('Could not generate tests'));
+        break;
+      }
+
+      case '/debug': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /debug <error message>')); break; }
+        const debugResult = await this.codeIntel.debugError(args);
+        console.log(debugResult.analysis);
+        break;
+      }
+
+      case '/analyze-codebase': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /analyze-codebase <directory>')); break; }
+        const spin = ora('🔍 Analyzing codebase...').start();
+        const codebaseAnalysis = await this.codeIntel.analyzeCodebase(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Analysis complete:`));
+        console.log(chalk.hex('#00FFFF')(`  Files: ${codebaseAnalysis.totalFiles}`));
+        console.log(chalk.hex('#00FFFF')(`  Languages: ${JSON.stringify(codebaseAnalysis.languages)}`));
+        console.log(chalk.hex('#00FFFF')(`  Dependencies: ${codebaseAnalysis.dependencies.length}`));
+        console.log(chalk.hex('#00FFFF')(`  Complexity: ${codebaseAnalysis.complexity}`));
+        if (codebaseAnalysis.description) console.log('\n' + codebaseAnalysis.description);
+        break;
+      }
+
+      // ═══ TRUST & SAFETY ═══
+      case '/trust': {
+        const trustStatus = this.trustSafety.getStatus();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🛡️ Trust & Safety'),
+          '',
+          chalk.hex('#00FFFF')('Mode: ') + trustStatus.mode,
+          chalk.hex('#00FFFF')('Sandbox: ') + (trustStatus.sandboxEnabled ? '✅ Enabled' : '❌ Disabled'),
+          chalk.hex('#00FFFF')('Pending approvals: ') + trustStatus.pendingApprovals,
+          chalk.hex('#00FFFF')('Rollbacks available: ') + trustStatus.rollbacksAvailable,
+          chalk.hex('#00FFFF')('Audit entries: ') + trustStatus.auditEntries,
+          '',
+          chalk.hex('#888888')('  /trust-mode <mode>  — Set mode (safe/supervised/full)'),
+          chalk.hex('#888888')('  /sandbox on|off     — Toggle sandbox'),
+          chalk.hex('#888888')('  /rollback <id>      — Undo an action'),
+          chalk.hex('#888888')('  /rollbacks          — List available rollbacks'),
+          chalk.hex('#888888')('  /approvals          — Pending approvals'),
+          chalk.hex('#888888')('  /trust-log          — View audit trail')
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/trust-mode': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /trust-mode <safe|supervised|full>')); break; }
+        const modeResult = this.trustSafety.setMode(args);
+        console.log(modeResult.error ? chalk.hex('#FF0000')(`❌ ${modeResult.error}`) : chalk.hex('#00FF40')(`✅ ${modeResult.description}`));
+        break;
+      }
+
+      case '/sandbox': {
+        if (args === 'on') {
+          this.trustSafety.enableSandbox();
+          console.log(chalk.hex('#00FF40')('✅ Sandbox enabled'));
+        } else if (args === 'off') {
+          this.trustSafety.disableSandbox();
+          console.log(chalk.hex('#00FF40')('✅ Sandbox disabled'));
+        } else {
+          console.log(chalk.hex('#FF0000')('Usage: /sandbox on|off'));
+        }
+        break;
+      }
+
+      case '/rollbacks': {
+        const rollbacks = this.trustSafety.getRollbackStack();
+        if (!rollbacks.length) console.log(chalk.hex('#888888')('  No rollbacks available'));
+        else rollbacks.forEach(r => console.log(chalk.hex('#00FFFF')(`  ${r.id}`) + chalk.hex('#888888')(` — ${r.action.type || 'action'} at ${new Date(r.timestamp).toLocaleTimeString()}`)));
+        break;
+      }
+
+      case '/rollback': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /rollback <id>')); break; }
+        const rbResult = await this.trustSafety.rollback(args);
+        console.log(rbResult.rolledBack ? chalk.hex('#00FF40')('✅ Rolled back!') : chalk.hex('#FF0000')(`❌ ${rbResult.error}`));
+        break;
+      }
+
+      case '/approvals': {
+        const approvals = this.trustSafety.getPendingApprovals();
+        if (!approvals.length) console.log(chalk.hex('#888888')('  No pending approvals'));
+        else approvals.forEach(a => console.log(chalk.hex('#FFD700')(`  ${a.preview.id}`) + chalk.hex('#888888')(` — ${a.preview.description} [${a.preview.risk}]`)));
+        break;
+      }
+
+      case '/trust-log': {
+        const log = this.trustSafety.getAuditTrail({ limit: 15 });
+        log.forEach(l => console.log(chalk.hex('#888888')(`  [${new Date(l.timestamp).toLocaleTimeString()}]`) + ` ${l.action}`));
         break;
       }
 
