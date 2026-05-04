@@ -42,6 +42,8 @@ const APIGateway = require('../api-gateway/index.js');
 const CodeIntelligence = require('../code-intelligence/index.js');
 const TrustSafety = require('../trust-safety/index.js');
 const UniversalToolkit = require('../universal-toolkit/index.js');
+const BrowserEngine = require('../browser-engine/index.js');
+const ReverseEngineering = require('../reverse-engineering/index.js');
 
 class OpenDesktopEngine {
   constructor(configData) {
@@ -84,6 +86,8 @@ class OpenDesktopEngine {
     this.codeIntel = new CodeIntelligence(this.config, this.provider, this.memory);
     this.trustSafety = new TrustSafety(this.config, this.security);
     this.toolkit = new UniversalToolkit(this.config, this.provider);
+    this.browser = new BrowserEngine(this.config, this.provider);
+    this.reverseEng = new ReverseEngineering(this.config, this.provider);
 
     this.userName = this.config.get('user.name', '');
     this.aiName = this.config.get('ai.name', 'OpenDesktop');
@@ -1454,6 +1458,227 @@ Be helpful, concise, proactive. Use emojis. Context:\n${context}`;
             chalk.hex('#00FFFF')(`  ${p.icon} ${p.name.padEnd(15)}`) + chalk.hex('#888888')(` ${p.requires}`)
           )
         ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      // ═══ BROWSER & DOWNLOADS ═══
+      case '/download': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /download <url>')); break; }
+        const dlResult = await this.browser.downloadWithProgress(args);
+        console.log(dlResult.success ? chalk.hex('#00FF40')(`✅ Downloaded: ${dlResult.path} (${dlResult.sizeHuman || this.browser._formatBytes(dlResult.size)})`) : chalk.hex('#FF0000')(`❌ ${dlResult.error}`));
+        break;
+      }
+
+      case '/browse': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /browse <url>')); break; }
+        const browseResult = await this.browser.openBrowser(args);
+        console.log(browseResult.opened ? chalk.hex('#00FF40')(`✅ Opening: ${args}`) : chalk.hex('#FF0000')(`❌ ${browseResult.error}`));
+        break;
+      }
+
+      case '/find-links': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /find-links <url>')); break; }
+        const linksResult = await this.browser.findDownloadLinks(args);
+        console.log(chalk.hex('#00FF40')(`✅ Found ${linksResult.total} links:\n`));
+        (linksResult.links || []).slice(0, 20).forEach((l, i) => console.log(chalk.hex('#00FFFF')(`  ${i + 1}. `) + l));
+        break;
+      }
+
+      case '/scrape-deep': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /scrape-deep <url>')); break; }
+        const spin = ora('🌐 Deep scraping...').start();
+        const scrapeResult = await this.browser.scrapeDeep(args, { depth: 2, maxPages: 10 });
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Scraped ${scrapeResult.pagesScraped} pages:\n`));
+        scrapeResult.results?.forEach(r => console.log(chalk.hex('#00FFFF')(`  ${r.title || r.url}`) + chalk.hex('#888888')(` [depth: ${r.depth}]`)));
+        break;
+      }
+
+      case '/screenshot': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /screenshot <url>')); break; }
+        const spin = ora('📸 Taking screenshot...').start();
+        const ssResult = await this.browser.screenshotPage(args, { fullPage: true });
+        spin.stop();
+        console.log(ssResult.success ? chalk.hex('#00FF40')(`✅ Screenshot: ${ssResult.path}`) : chalk.hex('#FF0000')(`❌ ${ssResult.error}`));
+        break;
+      }
+
+      case '/find': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /find <anything>')); break; }
+        const spin = ora('🔍 Searching everywhere...').start();
+        const findResult = await this.browser.searchAndFind(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Found ${findResult.totalResults} results:\n`));
+        if (findResult.results?.web?.length) {
+          console.log(chalk.hex('#FF0000')('  ═══ WEB ═══'));
+          findResult.results.web.slice(0, 5).forEach((u, i) => console.log(chalk.hex('#00FFFF')(`    ${i + 1}. `) + u));
+        }
+        if (findResult.results?.github?.length) {
+          console.log(chalk.hex('#FF0000')('  ═══ GITHUB ═══'));
+          findResult.results.github.forEach(r => console.log(chalk.hex('#00FFFF')(`    ⭐ ${r.stars} `) + `${r.name} — ${r.description?.slice(0, 60)}`));
+        }
+        if (findResult.results?.npm?.length) {
+          console.log(chalk.hex('#FF0000')('  ═══ NPM ═══'));
+          findResult.results.npm.forEach(r => console.log(chalk.hex('#00FFFF')(`    📦 ${r.name}@${r.version} `) + `— ${r.description?.slice(0, 60)}`));
+        }
+        if (findResult.results?.downloads?.length) {
+          console.log(chalk.hex('#FF0000')('  ═══ DOWNLOADS ═══'));
+          findResult.results.downloads.slice(0, 10).forEach((d, i) => console.log(chalk.hex('#00FF40')(`    📥 ${i + 1}. `) + d));
+        }
+        break;
+      }
+
+      case '/how': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /how <anything you want to do>')); break; }
+        const spin = ora('🧠 Finding ways...').start();
+        const howResult = await this.browser.findHowTo(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ ${howResult.conclusion}\n`));
+        for (const strategy of howResult.strategies) {
+          console.log(chalk.hex('#FF0000')(`  ═══ ${strategy.source?.toUpperCase()} ═══`));
+          if (strategy.result) console.log(strategy.result);
+          if (strategy.results?.length) strategy.results.forEach(r => console.log(chalk.hex('#00FFFF')(`    • `) + (r.title || r.name || r.url || JSON.stringify(r).slice(0, 80))));
+        }
+        break;
+      }
+
+      // ═══ REVERSE ENGINEERING ═══
+      case '/analyze-bin': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /analyze-bin <file>')); break; }
+        const spin = ora('🔬 Analyzing binary...').start();
+        const binResult = await this.reverseEng.analyzeBinary(args);
+        spin.stop();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🔬 Binary Analysis'),
+          '',
+          chalk.hex('#00FFFF')('File: ') + binResult.file,
+          chalk.hex('#00FFFF')('Size: ') + binResult.sizeHuman,
+          chalk.hex('#00FFFF')('Type: ') + binResult.magic?.description,
+          chalk.hex('#00FFFF')('Entropy: ') + binResult.entropy?.toFixed(2),
+          chalk.hex('#00FFFF')('MD5: ') + binResult.hashes?.md5,
+          chalk.hex('#00FFFF')('SHA256: ') + binResult.hashes?.sha256,
+          '',
+          chalk.hex('#FF0000')('═══ STRINGS ═══'),
+          ...(binResult.strings || []).slice(0, 10).map(s => chalk.hex('#888888')('  ' + s.slice(0, 80))),
+          '',
+          chalk.hex('#FF0000')('═══ PATTERNS ═══'),
+          ...(binResult.patterns || []).map(p => chalk.hex('#00FFFF')(`  ${p.type}: ${p.count || ''}`) + (p.samples ? chalk.hex('#888888')(` — ${p.samples[0]?.slice(0, 50)}`) : ''))
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        if (binResult.aiAnalysis) console.log('\n' + binResult.aiAnalysis);
+        break;
+      }
+
+      case '/hexdump': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /hexdump <file>')); break; }
+        const content = fs.readFileSync(args);
+        const dump = this.reverseEng._hexDump(content.slice(0, 512));
+        dump.forEach(line => console.log(chalk.hex('#00FFFF')(line)));
+        break;
+      }
+
+      case '/strings': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /strings <file>')); break; }
+        const content = fs.readFileSync(args);
+        const strings = this.reverseEng._extractStrings(content, 6);
+        console.log(chalk.hex('#00FF40')(`✅ Found ${strings.length} strings:\n`));
+        strings.slice(0, 50).forEach((s, i) => console.log(chalk.hex('#888888')(`  ${i}: `) + s));
+        break;
+      }
+
+      case '/entropy': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /entropy <file>')); break; }
+        const content = fs.readFileSync(args);
+        const entropy = this.reverseEng._calculateEntropy(content);
+        const level = entropy > 7.5 ? '🔴 Very high (encrypted/compressed)' : entropy > 6 ? '🟡 High (binary)' : entropy > 4 ? '🟢 Medium (structured)' : '⚪ Low (text/simple)';
+        console.log(chalk.hex('#00FFFF')(`Entropy: ${entropy.toFixed(4)} — ${level}`));
+        break;
+      }
+
+      case '/patterns': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /patterns <file>')); break; }
+        const spin = ora('🔍 Finding patterns...').start();
+        const patterns = await this.reverseEng.findPatterns(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Patterns found:\n`));
+        console.log(chalk.hex('#00FFFF')(`  Entropy: ${patterns.entropy?.toFixed(2)}`));
+        (patterns.urls?.samples || []).forEach(u => console.log(chalk.hex('#00FFFF')('  URL: ') + u));
+        (patterns.sequences || []).slice(0, 5).forEach(s => console.log(chalk.hex('#00FFFF')('  Seq: ') + `${s.hex.slice(0, 20)}... (${s.count}x)`));
+        if (patterns.recommendation) console.log('\n' + patterns.recommendation);
+        break;
+      }
+
+      case '/diff': {
+        const [diffFile1, diffFile2] = args.split(' ');
+        if (!diffFile1 || !diffFile2) { console.log(chalk.hex('#FF0000')('Usage: /diff <file1> <file2>')); break; }
+        const diffResult = await this.reverseEng.diffFiles(diffFile1, diffFile2);
+        console.log(diffResult.identical ? chalk.hex('#00FF40')('✅ Files are identical') : [
+          chalk.hex('#FF0000')('📊 Diff Results:'),
+          chalk.hex('#00FFFF')(`  Size diff: ${diffResult.sizeDiff} bytes`),
+          chalk.hex('#00FFFF')(`  Byte diffs: ${diffResult.totalByteDiffs} (${diffResult.diffPercentage})`),
+          ...diffResult.byteDiffs.slice(0, 10).map(d => chalk.hex('#888888')(`  ${d.hex}: ${d.file1} → ${d.file2}`))
+        ].join('\n'));
+        break;
+      }
+
+      case '/hardware': {
+        const spin = ora('🖥️ Analyzing hardware...').start();
+        const hw = await this.reverseEng.analyzeHardware();
+        spin.stop();
+        console.log(require('boxen')([
+          chalk.hex('#FF0000')('🖥️ Hardware Analysis'),
+          '',
+          chalk.hex('#FF0000')('═══ CPU ═══'),
+          chalk.hex('#00FFFF')('  Brand: ') + hw.cpu.brand,
+          chalk.hex('#00FFFF')('  Cores: ') + `${hw.cpu.cores} (${hw.cpu.physicalCores} physical)`,
+          chalk.hex('#00FFFF')('  Speed: ') + hw.cpu.speed,
+          '',
+          chalk.hex('#FF0000')('═══ MEMORY ═══'),
+          chalk.hex('#00FFFF')('  Total: ') + hw.memory.total,
+          chalk.hex('#00FFFF')('  Used: ') + hw.memory.used,
+          '',
+          chalk.hex('#FF0000')('═══ STORAGE ═══'),
+          ...hw.storage.map(s => chalk.hex('#00FFFF')(`  ${s.mount}: ${s.size} (${s.percent} used)`)),
+          '',
+          chalk.hex('#FF0000')('═══ GPU ═══'),
+          ...hw.gpu.map(g => chalk.hex('#00FFFF')(`  ${g.model} (${g.vram})`)),
+          '',
+          chalk.hex('#FF0000')('═══ MOTHERBOARD ═══'),
+          chalk.hex('#00FFFF')('  Manufacturer: ') + hw.motherboard.manufacturer,
+          chalk.hex('#00FFFF')('  Model: ') + hw.motherboard.model,
+          '',
+          chalk.hex('#FF0000')('═══ BIOS ═══'),
+          chalk.hex('#00FFFF')('  Vendor: ') + hw.bios.vendor,
+          chalk.hex('#00FFFF')('  Version: ') + hw.bios.version,
+          '',
+          chalk.hex('#FF0000')('═══ NETWORK ═══'),
+          ...hw.network.map(n => chalk.hex('#00FFFF')(`  ${n.iface}: ${n.ip4} (${n.mac})`))
+        ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+        break;
+      }
+
+      case '/net-analyze': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /net-analyze <host>')); break; }
+        const spin = ora('🌐 Analyzing network...').start();
+        const netResult = await this.reverseEng.analyzeNetwork(args);
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Network analysis for ${netResult.target}:\n`));
+        if (netResult.ping?.success) console.log(chalk.hex('#00FFFF')('  Ping: ') + 'Reachable');
+        if (netResult.ports?.length) {
+          console.log(chalk.hex('#FF0000')('  ═══ OPEN PORTS ═══'));
+          netResult.ports.forEach(p => console.log(chalk.hex('#00FF40')(`    Port ${p.port}: OPEN`)));
+        }
+        if (netResult.dns?.output) console.log(chalk.hex('#00FFFF')('  DNS: ') + netResult.dns.output.split('\n')[2]);
+        break;
+      }
+
+      case '/portscan': {
+        if (!args) { console.log(chalk.hex('#FF0000')('Usage: /portscan <host>')); break; }
+        const spin = ora('🔍 Scanning ports...').start();
+        const scanResult = await this.reverseEng.analyzeNetwork(args, { ports: [21,22,23,25,53,80,110,143,443,993,995,3306,3389,5432,8080,8443,27017,6379,9200,5601] });
+        spin.stop();
+        console.log(chalk.hex('#00FF40')(`✅ Open ports on ${scanResult.target}:\n`));
+        (scanResult.ports || []).forEach(p => console.log(chalk.hex('#00FF40')(`  ✅ Port ${p.port}: OPEN`)));
+        if (!scanResult.ports?.length) console.log(chalk.hex('#888888')('  No open ports found in scanned range'));
         break;
       }
 
