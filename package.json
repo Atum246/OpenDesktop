@@ -1,6 +1,6 @@
 {
   "name": "opendesktop-ai",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "OpenDesktop — AI-powered desktop agent that controls your computer. Voice, vision, automation, memory, 50+ AI providers. Install via CLI, control everything.",
   "main": "src/index.js",
   "bin": {
