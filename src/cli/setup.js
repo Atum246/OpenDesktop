@@ -39,6 +39,99 @@ async function setup() {
   console.log('');
 
   // ═══════════════════════════════════════════════════
+  //  AUTO-DETECT SYSTEM INFO
+  // ═══════════════════════════════════════════════════
+  const detected = {};
+
+  // Username
+  detected.username = os.userInfo().username || process.env.USER || process.env.USERNAME || '';
+
+  // Timezone
+  try { detected.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { detected.timezone = 'UTC'; }
+
+  // UTC offset
+  detected.tzOffset = (() => {
+    try {
+      const now = new Date();
+      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: detected.timezone }));
+      const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
+      const diff = (tzDate - utcDate) / 3600000;
+      return `UTC${diff >= 0 ? '+' : ''}${diff}`;
+    } catch (e) { return ''; }
+  })();
+
+  // OS
+  detected.platform = os.platform(); // win32, darwin, linux
+  detected.osRelease = os.release();
+  detected.osName = detected.platform === 'win32' ? 'Windows' : detected.platform === 'darwin' ? 'macOS' : 'Linux';
+  detected.hostname = os.hostname();
+
+  // RAM
+  detected.ramGB = Math.round(os.totalmem() / 1073741824);
+
+  // Shell
+  detected.shell = process.env.SHELL || process.env.ComSpec || '';
+
+  // GPU (async, will resolve before provider step)
+  detected.gpu = null;
+  detected.hasGpu = false;
+  try {
+    const si = require('systeminformation');
+    const gpuInfo = await si.graphics();
+    if (gpuInfo.controllers && gpuInfo.controllers.length > 0) {
+      const gpu = gpuInfo.controllers[0];
+      detected.gpu = gpu.model || gpu.name || null;
+      detected.hasGpu = gpu.vram && gpu.vram > 2048; // 2GB+ VRAM
+    }
+  } catch (e) {}
+
+  // Check for local AI providers
+  detected.ollamaRunning = false;
+  detected.ollamaModels = [];
+  detected.lmstudioRunning = false;
+  try {
+    const http = require('http');
+    const checkLocal = (url) => new Promise((resolve) => {
+      const req = http.get(url, { timeout: 2000 }, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => { try { resolve(JSON.parse(data)); } catch { resolve(null); } });
+      });
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => { req.destroy(); resolve(null); });
+    });
+    const ollamaResp = await checkLocal('http://localhost:11434/api/tags');
+    if (ollamaResp && ollamaResp.models) {
+      detected.ollamaRunning = true;
+      detected.ollamaModels = ollamaResp.models.map(m => m.name);
+    }
+    const lmResp = await checkLocal('http://localhost:1234/v1/models');
+    if (lmResp && lmResp.data) {
+      detected.lmstudioRunning = true;
+    }
+  } catch (e) {}
+
+  // Check for API keys in environment
+  detected.envKeys = {};
+  const keyMap = {
+    'OPENAI_API_KEY': 'openai',
+    'ANTHROPIC_API_KEY': 'anthropic',
+    'GOOGLE_API_KEY': 'google',
+    'GROQ_API_KEY': 'groq',
+    'DEEPSEEK_API_KEY': 'deepseek',
+    'OPENROUTER_API_KEY': 'openrouter',
+    'NVIDIA_API_KEY': 'nvidia',
+    'MISTRAL_API_KEY': 'mistral'
+  };
+  for (const [envVar, provider] of Object.entries(keyMap)) {
+    if (process.env[envVar]) {
+      detected.envKeys[provider] = process.env[envVar];
+    }
+  }
+
+  console.log(chalk.hex('#888888')(`  Detected: ${detected.osName} ${detected.hostname} | ${detected.ramGB}GB RAM${detected.gpu ? ' | ' + detected.gpu : ''}${detected.ollamaRunning ? ' | Ollama running' : ''}${detected.lmstudioRunning ? ' | LM Studio running' : ''}${Object.keys(detected.envKeys).length > 0 ? ' | API keys found: ' + Object.keys(detected.envKeys).join(', ') : ''}\n`));
+
+  // ═══════════════════════════════════════════════════
   //  STEP 1: USER IDENTITY — Who are you?
   // ═══════════════════════════════════════════════════
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
@@ -46,29 +139,11 @@ async function setup() {
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
   console.log('');
 
-  // Auto-detect timezone
-  let detectedTimezone = 'UTC';
-  try {
-    detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch (e) {}
-
-  // Get UTC offset for display
-  const tzOffset = (() => {
-    try {
-      const now = new Date();
-      const tzDate = new Date(now.toLocaleString('en-US', { timeZone: detectedTimezone }));
-      const utcDate = new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }));
-      const diff = (tzDate - utcDate) / 3600000;
-      const sign = diff >= 0 ? '+' : '';
-      return `UTC${sign}${diff}`;
-    } catch (e) { return ''; }
-  })();
-
   const identity = await inquirer.prompt([
-    { type: 'input', name: 'userName', message: chalk.hex('#FFD700')('👤 What\'s your name?'), validate: v => v.trim().length > 0 || 'Name is required' },
+    { type: 'input', name: 'userName', message: chalk.hex('#FFD700')('👤 What\'s your name?'), default: detected.username, validate: v => v.trim().length > 0 || 'Name is required' },
     { type: 'input', name: 'aiName', message: chalk.hex('#FFD700')('🤖 What should I be called?'), default: 'OpenDesktop' },
-    { type: 'list', name: 'timezone', message: chalk.hex('#FFD700')(`🌍 Your timezone (${chalk.white(detectedTimezone)} ${tzOffset} detected):`), choices: [
-      { name: `✅ ${detectedTimezone} (${tzOffset}) — Detected`, value: detectedTimezone },
+    { type: 'list', name: 'timezone', message: chalk.hex('#FFD700')(`🌍 Your timezone (${chalk.white(detected.timezone)} ${detected.tzOffset} detected):`), choices: [
+      { name: `✅ ${detected.timezone} (${detected.tzOffset}) — Auto-detected`, value: detected.timezone },
       { name: '🇺🇸 Eastern (US)', value: 'America/New_York' },
       { name: '🇺🇸 Central (US)', value: 'America/Chicago' },
       { name: '🇺🇸 Pacific (US)', value: 'America/Los_Angeles' },
@@ -81,7 +156,7 @@ async function setup() {
       { name: '🇧🇷 São Paulo (BR)', value: 'America/Sao_Paulo' },
       { name: '🌐 UTC', value: 'UTC' },
       { name: '⏭️ Skip', value: 'skip' }
-    ], default: detectedTimezone }
+    ], default: detected.timezone }
   ]);
 
   console.log(chalk.hex('#00FF40')(`\n  ✅ Hey ${identity.userName}! I'm ${identity.aiName}. Let's set things up.\n`));
@@ -145,29 +220,67 @@ async function setup() {
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
   console.log('');
 
+  // Build smart provider list based on what's detected
+  const providerChoices = [];
+  const envKeyProviders = Object.keys(detected.envKeys);
+
+  // If local providers are running, put them first
+  if (detected.ollamaRunning) {
+    providerChoices.push({ name: `🏠 Ollama — RUNNING LOCALLY (${detected.ollamaModels.length} models found) — Free, private, fast`, value: 'ollama' });
+  }
+  if (detected.lmstudioRunning) {
+    providerChoices.push({ name: '🏠 LM Studio — RUNNING LOCALLY — Free, private', value: 'lmstudio' });
+  }
+
+  // If API keys found in env, mark those providers
+  const providerInfo = {
+    openrouter: { icon: '🌐', label: 'OpenRouter', note: 'Access 50+ models with one key' },
+    openai: { icon: '🧠', label: 'OpenAI', note: 'GPT-4o, o1 (most capable)' },
+    anthropic: { icon: '📚', label: 'Anthropic', note: 'Claude 3.5 (best reasoning)' },
+    google: { icon: '💎', label: 'Google', note: 'Gemini (fast & free tier)' },
+    groq: { icon: '⚡', label: 'Groq', note: 'Llama/Mixtral (fastest inference)' },
+    nvidia: { icon: '🟢', label: 'Nvidia NIM', note: 'Enterprise AI' },
+    deepseek: { icon: '🐋', label: 'DeepSeek', note: 'Coding specialist' }
+  };
+
+  for (const [id, info] of Object.entries(providerInfo)) {
+    const hasKey = envKeyProviders.includes(id);
+    const keyNote = hasKey ? ' — API KEY FOUND IN ENV' : '';
+    providerChoices.push({ name: `${info.icon} ${info.label} — ${info.note}${keyNote}`, value: id });
+  }
+
+  if (!detected.ollamaRunning && !detected.lmstudioRunning) {
+    providerChoices.push({ name: '🏠 Ollama — 100% local (not detected — install from ollama.ai)', value: 'ollama' });
+    providerChoices.push({ name: '🏠 LM Studio — Local models (not detected)', value: 'lmstudio' });
+  }
+
+  providerChoices.push({ name: '🔧 Custom endpoint', value: 'custom' });
+  providerChoices.push(new inquirer.Separator());
+  providerChoices.push({ name: '⏭️ Skip (configure later)', value: 'skip' });
+
+  // Determine best default provider
+  let defaultProvider = 'openrouter';
+  if (detected.ollamaRunning) defaultProvider = 'ollama';
+  else if (detected.lmstudioRunning) defaultProvider = 'lmstudio';
+  else if (detected.envKeys.openrouter) defaultProvider = 'openrouter';
+  else if (detected.envKeys.openai) defaultProvider = 'openai';
+  else if (detected.envKeys.anthropic) defaultProvider = 'anthropic';
+
   const providerAnswers = await inquirer.prompt([
-    { type: 'list', name: 'provider', message: chalk.hex('#FFD700')('🤖 Which AI should power me?'), choices: [
-      { name: '🌐 OpenRouter — Access 50+ models with one key', value: 'openrouter' },
-      { name: '🧠 OpenAI — GPT-4o, o1 (most capable)', value: 'openai' },
-      { name: '📚 Anthropic — Claude 3.5 (best reasoning)', value: 'anthropic' },
-      { name: '💎 Google — Gemini (fast & free tier)', value: 'google' },
-      { name: '⚡ Groq — Llama/Mixtral (fastest inference)', value: 'groq' },
-      { name: '🟢 Nvidia NIM — Enterprise AI', value: 'nvidia' },
-      { name: '🐋 DeepSeek — Coding specialist', value: 'deepseek' },
-      { name: '🏠 Ollama — 100% local, zero cost, full privacy', value: 'ollama' },
-      { name: '🏠 LM Studio — Local models', value: 'lmstudio' },
-      { name: '🔧 Custom endpoint', value: 'custom' },
-      new inquirer.Separator(),
-      { name: '⏭️ Skip (configure later)', value: 'skip' }
-    ]},
+    { type: 'list', name: 'provider', message: chalk.hex('#FFD700')('🤖 Which AI should power me?'), choices: providerChoices, default: defaultProvider },
     { type: 'password', name: 'apiKey', message: chalk.hex('#FFD700')('🔑 API Key:'),
-      when: a => !['skip', 'ollama', 'lmstudio'].includes(a.provider) },
+      when: a => !['skip', 'ollama', 'lmstudio'].includes(a.provider),
+      default: a => detected.envKeys[a.provider] || undefined },
     { type: 'input', name: 'endpoint', message: chalk.hex('#FFD700')('🔗 Endpoint URL:'),
       when: a => ['custom', 'ollama', 'lmstudio'].includes(a.provider),
       default: a => a.provider === 'ollama' ? 'http://localhost:11434' : a.provider === 'lmstudio' ? 'http://localhost:1234' : '' },
     { type: 'list', name: 'model', message: chalk.hex('#FFD700')('🎯 Default model:'),
       when: a => a.provider !== 'skip',
       choices: a => {
+        // If Ollama, show actually installed models
+        if (a.provider === 'ollama' && detected.ollamaModels.length > 0) {
+          return detected.ollamaModels.map(m => ({ name: `${m} (installed)`, value: m }));
+        }
         const models = {
           openrouter: ['anthropic/claude-3.5-sonnet','openai/gpt-4o','google/gemini-pro-1.5','meta-llama/llama-3.1-405b-instruct','deepseek/deepseek-chat'],
           openai: ['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1-preview','o1-mini'],
@@ -185,6 +298,12 @@ async function setup() {
     }
   ]);
 
+  // Skip API key prompt if key was found in env and user didn't change it
+  if (!providerAnswers.apiKey && detected.envKeys[providerAnswers.provider]) {
+    providerAnswers.apiKey = detected.envKeys[providerAnswers.provider];
+    console.log(chalk.hex('#00FF40')(`  ✅ Using API key from environment variable\n`));
+  }
+
   const defaultModels = { openrouter: 'anthropic/claude-3.5-sonnet', openai: 'gpt-4o', anthropic: 'claude-3.5-sonnet-20241022', google: 'gemini-1.5-pro', groq: 'llama-3.1-70b-versatile', nvidia: 'meta/llama-3.1-405b-instruct', deepseek: 'deepseek-chat', ollama: 'llama3.1' };
 
   // ═══════════════════════════════════════════════════
@@ -195,15 +314,28 @@ async function setup() {
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
   console.log('');
 
+  // Smart defaults based on detected system
+  const defaultVoice = detected.platform !== 'linux' || process.env.DISPLAY ? true : false;
+  const defaultIot = false; // Always off by default
+  const defaultSocialMedia = false; // Always off by default
+
+  if (detected.hasGpu) {
+    console.log(chalk.hex('#00FF40')(`  GPU detected: ${detected.gpu} — Local models will run great!`));
+  }
+  if (detected.ramGB < 8) {
+    console.log(chalk.hex('#FFFF00')(`  ${detected.ramGB}GB RAM detected — Some features may be limited. Cloud providers recommended.`));
+  }
+  console.log('');
+
   const features = await inquirer.prompt([
-    { type: 'confirm', name: 'voice', message: chalk.hex('#FFD700')('🎤 Voice control (talk to me)?'), default: true },
+    { type: 'confirm', name: 'voice', message: chalk.hex('#FFD700')('🎤 Voice control (talk to me)?'), default: defaultVoice },
     { type: 'confirm', name: 'vision', message: chalk.hex('#FFD700')('👁️ Screen vision (I can see your screen)?'), default: true },
     { type: 'confirm', name: 'memory', message: chalk.hex('#FFD700')('🧠 Persistent memory (I never forget)?'), default: true },
     { type: 'confirm', name: 'automation', message: chalk.hex('#FFD700')('🖥️ Desktop automation (control mouse/keyboard)?'), default: true },
     { type: 'confirm', name: 'webSearch', message: chalk.hex('#FFD700')('🔍 Web search (search the internet)?'), default: true },
-    { type: 'confirm', name: 'iot', message: chalk.hex('#FFD700')('🏠 IoT control (smart home devices)?'), default: false },
+    { type: 'confirm', name: 'iot', message: chalk.hex('#FFD700')('🏠 IoT control (smart home devices)?'), default: defaultIot },
     { type: 'confirm', name: 'security', message: chalk.hex('#FFD700')('🔒 Ultra security (encryption, audit logs)?'), default: true },
-    { type: 'confirm', name: 'socialMedia', message: chalk.hex('#FFD700')('📱 Social media automation?'), default: false },
+    { type: 'confirm', name: 'socialMedia', message: chalk.hex('#FFD700')('📱 Social media automation?'), default: defaultSocialMedia },
     { type: 'confirm', name: 'selfImprove', message: chalk.hex('#FFD700')('🧬 Self-improvement (I rewrite my own code)?'), default: true },
     { type: 'confirm', name: 'autoUpdate', message: chalk.hex('#FFD700')('🔄 Auto-update from npm?'), default: true }
   ]);
@@ -364,6 +496,12 @@ async function setup() {
     chalk.hex('#00FFFF')('🎭 Personality: ') + persona.personality,
     chalk.hex('#00FFFF')('⌨️ Hotkey: ') + chalk.white.bold(hotkey),
     '',
+    chalk.hex('#FF0000')('═══ SYSTEM ═══'),
+    chalk.hex('#00FFFF')('💻 OS: ') + `${detected.osName} ${detected.hostname}`,
+    chalk.hex('#00FFFF')('💾 RAM: ') + `${detected.ramGB}GB`,
+    detected.gpu ? chalk.hex('#00FFFF')('🎮 GPU: ') + detected.gpu : null,
+    chalk.hex('#00FFFF')('🌍 Timezone: ') + config.user.timezone,
+    '',
     chalk.hex('#FF0000')('═══ CAPABILITIES ═══'),
     chalk.hex('#00FFFF')('🎤 Voice: ') + (features.voice ? '✅' : '❌'),
     chalk.hex('#00FFFF')('👁️ Vision: ') + (features.vision ? '✅' : '❌'),
@@ -381,7 +519,7 @@ async function setup() {
     chalk.hex('#888888')(`  ${hotkey}          → Summon from anywhere!`),
     '',
     chalk.hex('#FFD700')(`  💡 Press ${hotkey} anytime to summon me!`)
-  ].join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'green', title: '🎉 Ready!', titleAlignment: 'center', float: 'center' }));
+  ].filter(Boolean).join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'green', title: '🎉 Ready!', titleAlignment: 'center', float: 'center' }));
 
   console.log('');
   console.log(chalk.hex('#00FF40')(`  ${identity.aiName}: Hey ${identity.userName}! Let's build something amazing together. 🚀`));
