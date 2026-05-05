@@ -7,6 +7,7 @@ const inquirer = require('inquirer');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const { exec, execSync } = require('child_process');
 
 const CONFIG_DIR = path.join(os.homedir(), '.opendesktop');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
@@ -16,25 +17,140 @@ function ensureDir(d) { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true
 
 function checkCommandExists(cmd) {
   return new Promise(resolve => {
-    const { exec } = require('child_process');
-    const check = detected.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
+    const check = process.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
     exec(check, (err) => resolve(!err));
   });
 }
 
-function runCommand(cmd) {
+function runCommand(cmd, opts = {}) {
   return new Promise((resolve, reject) => {
-    const { exec } = require('child_process');
-    const child = exec(cmd, { timeout: 300000, shell: true }, (err, stdout, stderr) => {
+    const child = exec(cmd, { timeout: opts.timeout || 300000, shell: true, ...opts }, (err, stdout, stderr) => {
       if (err) reject(err);
       else resolve(stdout);
     });
-    child.stdout?.on('data', (data) => process.stdout.write(data));
-    child.stderr?.on('data', (data) => process.stderr.write(data));
+    if (!opts.silent) {
+      child.stdout?.on('data', (data) => process.stdout.write(data));
+      child.stderr?.on('data', (data) => process.stderr.write(data));
+    }
+  });
+}
+
+function runCommandSilent(cmd) {
+  return new Promise((resolve, reject) => {
+    exec(cmd, { timeout: 30000 }, (err, stdout) => {
+      if (err) reject(err);
+      else resolve(stdout?.trim() || '');
+    });
   });
 }
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function retry(fn, retries = 3, delay = 2000) {
+  for (let i = 0; i < retries; i++) {
+    try { return await fn(); } catch (err) {
+      if (i === retries - 1) throw err;
+      await sleep(delay);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PRE-FLIGHT CHECKS — Validate everything before starting
+// ═══════════════════════════════════════════════════
+async function preflightChecks() {
+  const checks = [];
+  const issues = [];
+  const fixes = [];
+
+  // 1. Node.js version
+  const nodeVersion = process.version;
+  const major = parseInt(nodeVersion.slice(1).split('.')[0]);
+  checks.push({ name: 'Node.js version', status: major >= 18 ? 'ok' : 'fail', detail: nodeVersion });
+  if (major < 18) {
+    issues.push(`Node.js ${nodeVersion} is too old. Need v18+.`);
+    fixes.push('Download from https://nodejs.org or run: nvm install 20');
+  }
+
+  // 2. npm available
+  try {
+    const npmVersion = await runCommandSilent('npm --version');
+    checks.push({ name: 'npm', status: 'ok', detail: `v${npmVersion}` });
+  } catch {
+    checks.push({ name: 'npm', status: 'fail', detail: 'not found' });
+    issues.push('npm not found. It should come with Node.js.');
+    fixes.push('Reinstall Node.js from https://nodejs.org');
+  }
+
+  // 3. Disk space
+  try {
+    if (process.platform !== 'win32') {
+      const df = await runCommandSilent("df -h / | tail -1 | awk '{print $4}'");
+      const availGB = parseFloat(df);
+      if (!isNaN(availGB) && availGB < 1) {
+        checks.push({ name: 'Disk space', status: 'warn', detail: `${df} available — low!` });
+        issues.push('Very low disk space. Installation may fail.');
+      } else {
+        checks.push({ name: 'Disk space', status: 'ok', detail: `${df} available` });
+      }
+    }
+  } catch {}
+
+  // 4. Network connectivity
+  try {
+    await runCommandSilent('curl -s --max-time 5 -o /dev/null -w "%{http_code}" https://registry.npmjs.org/');
+    checks.push({ name: 'Network', status: 'ok', detail: 'npm registry reachable' });
+  } catch {
+    checks.push({ name: 'Network', status: 'fail', detail: 'cannot reach npm registry' });
+    issues.push('Cannot reach npm registry. Check your internet connection.');
+    fixes.push('If behind a proxy: npm config set proxy http://your-proxy:port');
+  }
+
+  // 5. Proxy detection
+  const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy || process.env.HTTPS_PROXY || process.env.https_proxy;
+  if (httpProxy) {
+    checks.push({ name: 'Proxy', status: 'info', detail: httpProxy });
+  }
+
+  // 6. WSL detection
+  if (process.platform === 'linux') {
+    try {
+      const release = await runCommandSilent('cat /proc/version');
+      if (release.toLowerCase().includes('microsoft')) {
+        checks.push({ name: 'Environment', status: 'info', detail: 'WSL (Windows Subsystem for Linux)' });
+      }
+    } catch {}
+  }
+
+  // 7. Permissions
+  try {
+    const testFile = path.join(os.tmpdir(), '.opendesktop-test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    checks.push({ name: 'File permissions', status: 'ok', detail: 'read/write OK' });
+  } catch {
+    checks.push({ name: 'File permissions', status: 'fail', detail: 'cannot write to temp directory' });
+    issues.push('Cannot write to temp directory. Check permissions.');
+  }
+
+  // 8. Existing install
+  try {
+    const existingVersion = await runCommandSilent('opendesktop --version 2>/dev/null || echo ""');
+    if (existingVersion) {
+      checks.push({ name: 'Existing install', status: 'info', detail: `v${existingVersion}` });
+    }
+  } catch {}
+
+  // 9. Config already exists
+  if (fs.existsSync(CONFIG_FILE)) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+      checks.push({ name: 'Existing config', status: 'info', detail: `Provider: ${existing.provider?.name || 'unknown'}` });
+    } catch {}
+  }
+
+  return { checks, issues, fixes };
+}
 
 async function setup() {
   console.clear();
@@ -51,7 +167,7 @@ async function setup() {
   });
 
   console.log(boxen(
-    chalk.hex('#FF0000')('⚡ VERSION 1.0.0 — THE INTELLIGENCE AGENT ⚡\n\n') +
+    chalk.hex('#FF0000')('⚡ VERSION 2.2.1 — THE INTELLIGENCE AGENT ⚡\n\n') +
     chalk.hex('#00FFFF')('Not a dumb chatbot. A self-improving AI that controls\n') +
     chalk.hex('#00FFFF')('your computer, researches the web, spawns AI armies,\n') +
     chalk.hex('#00FFFF')('trains custom models, and gets smarter every day.'),
@@ -59,6 +175,60 @@ async function setup() {
   ));
 
   console.log('');
+
+  // ═══════════════════════════════════════════════════
+  //  PRE-FLIGHT CHECKS
+  // ═══════════════════════════════════════════════════
+  console.log(chalk.hex('#FF0000')('═'.repeat(60)));
+  console.log(chalk.hex('#FF0000').bold('  🔍 Checking your system...'));
+  console.log(chalk.hex('#FF0000')('═'.repeat(60)));
+  console.log('');
+
+  let preflight;
+  try {
+    preflight = await preflightChecks();
+  } catch (err) {
+    preflight = { checks: [], issues: [`Pre-flight check failed: ${err.message}`], fixes: [] };
+  }
+
+  // Display check results
+  for (const check of preflight.checks) {
+    const icon = check.status === 'ok' ? chalk.green('✓') :
+                 check.status === 'fail' ? chalk.red('✗') :
+                 check.status === 'warn' ? chalk.yellow('!') :
+                 chalk.cyan('i');
+    console.log(`  ${icon} ${check.name}: ${chalk.hex('#888888')(check.detail)}`);
+  }
+  console.log('');
+
+  // Handle issues
+  if (preflight.issues.length > 0) {
+    console.log(chalk.yellow('  ⚠️  Issues found:'));
+    for (const issue of preflight.issues) {
+      console.log(chalk.yellow(`    • ${issue}`));
+    }
+    if (preflight.fixes.length > 0) {
+      console.log(chalk.cyan('  Suggested fixes:'));
+      for (const fix of preflight.fixes) {
+        console.log(chalk.cyan(`    → ${fix}`));
+      }
+    }
+
+    const hasCritical = preflight.checks.some(c => c.status === 'fail');
+    if (hasCritical) {
+      const { continueAnyway } = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'continueAnyway',
+        message: chalk.hex('#FFD700')('Continue anyway? (some features may not work)'),
+        default: false
+      }]);
+      if (!continueAnyway) {
+        console.log(chalk.hex('#FF0000')('\n  Fix the issues above and try again.\n'));
+        process.exit(1);
+      }
+    }
+    console.log('');
+  }
 
   // ═══════════════════════════════════════════════════
   //  AUTO-DETECT SYSTEM INFO
@@ -714,20 +884,99 @@ async function setup() {
   fs.writeFileSync(PROFILE_FILE, JSON.stringify(profile, null, 2));
 
   // ═══════════════════════════════════════════════════
-  //  DONE — Show summary
+  //  VALIDATION — Verify everything works
   // ═══════════════════════════════════════════════════
-  console.log('\n');
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
-  console.log(chalk.hex('#00FF40').bold('  🎉 SETUP COMPLETE! Welcome to OpenDesktop v1.0.0'));
+  console.log(chalk.hex('#FF0000').bold('  🔍 Verifying setup...'));
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
   console.log('');
+
+  const validation = [];
+
+  // Check config file was saved
+  if (fs.existsSync(CONFIG_FILE)) {
+    validation.push({ name: 'Config saved', status: 'ok' });
+  } else {
+    validation.push({ name: 'Config saved', status: 'fail' });
+  }
+
+  // Check profile was saved
+  if (fs.existsSync(PROFILE_FILE)) {
+    validation.push({ name: 'Profile saved', status: 'ok' });
+  } else {
+    validation.push({ name: 'Profile saved', status: 'fail' });
+  }
+
+  // Check provider connectivity
+  if (providerAnswers.provider === 'ollama') {
+    try {
+      const http = require('http');
+      await new Promise((resolve, reject) => {
+        http.get('http://localhost:11434/api/tags', { timeout: 3000 }, (res) => {
+          let data = '';
+          res.on('data', c => data += c);
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.models && parsed.models.length > 0) {
+                validation.push({ name: 'Ollama models', status: 'ok', detail: `${parsed.models.length} models` });
+              } else {
+                validation.push({ name: 'Ollama models', status: 'warn', detail: 'no models installed yet' });
+              }
+            } catch { validation.push({ name: 'Ollama models', status: 'warn' }); }
+            resolve();
+          });
+        }).on('error', () => { validation.push({ name: 'Ollama connection', status: 'fail' }); resolve(); });
+      });
+    } catch {}
+  } else if (providerAnswers.provider !== 'skip' && providerAnswers.provider !== 'lmstudio') {
+    // Quick API test for cloud providers
+    if (providerAnswers.apiKey) {
+      validation.push({ name: 'API key set', status: 'ok' });
+    }
+  }
+
+  // Check opendesktop command
+  const odExists = await checkCommandExists('opendesktop') || await checkCommandExists('od');
+  validation.push({ name: 'opendesktop command', status: odExists ? 'ok' : 'warn', detail: odExists ? 'available' : 'restart terminal to use' });
+
+  // Display validation
+  for (const v of validation) {
+    const icon = v.status === 'ok' ? chalk.green('✓') :
+                 v.status === 'fail' ? chalk.red('✗') :
+                 chalk.yellow('!');
+    const detail = v.detail ? chalk.hex('#888888')(` — ${v.detail}`) : '';
+    console.log(`  ${icon} ${v.name}${detail}`);
+  }
+  console.log('');
+
+  // ═══════════════════════════════════════════════════
+  //  DONE — Show summary
+  // ═══════════════════════════════════════════════════
+  console.log(chalk.hex('#FF0000')('═'.repeat(60)));
+  console.log(chalk.hex('#00FF40').bold('  🎉 SETUP COMPLETE! Welcome to OpenDesktop v2.2.1'));
+  console.log(chalk.hex('#FF0000')('═'.repeat(60)));
+  console.log('');
+
+  const providerLabel = {
+    ollama: '🏠 Ollama (local, free)',
+    lmstudio: '🏠 LM Studio (local, free)',
+    google: '💎 Google Gemini (free tier)',
+    groq: '⚡ Groq (free tier)',
+    deepseek: '🐋 DeepSeek (free tier)',
+    openrouter: '🌐 OpenRouter',
+    openai: '🧠 OpenAI',
+    anthropic: '📚 Anthropic',
+    nvidia: '🟢 Nvidia NIM',
+    custom: '🔧 Custom'
+  }[providerAnswers.provider] || providerAnswers.provider;
 
   console.log(boxen([
     chalk.hex('#FF0000')(`⚡ ${identity.aiName} is ready!\n`),
     chalk.hex('#00FFFF')('👤 User: ') + identity.userName,
     chalk.hex('#00FFFF')('🤖 AI: ') + identity.aiName,
-    chalk.hex('#00FFFF')('🧠 Provider: ') + config.provider.name,
-    chalk.hex('#00FFFF')('🎯 Model: ') + config.provider.model,
+    chalk.hex('#00FFFF')('🧠 Provider: ') + providerLabel,
+    chalk.hex('#00FFFF')('🎯 Model: ') + (selectedModel || config.provider.model),
     chalk.hex('#00FFFF')('🎨 Theme: ') + theme.theme,
     chalk.hex('#00FFFF')('🎭 Personality: ') + persona.personality,
     chalk.hex('#00FFFF')('⌨️ Hotkey: ') + chalk.white.bold(hotkey),
@@ -757,9 +1006,32 @@ async function setup() {
     chalk.hex('#FFD700')(`  💡 Press ${hotkey} anytime to summon me!`)
   ].filter(Boolean).join('\n'), { padding: 1, borderStyle: 'round', borderColor: 'green', title: '🎉 Ready!', titleAlignment: 'center', float: 'center' }));
 
+  // Smart tip based on what was set up
   console.log('');
-  console.log(chalk.hex('#00FF40')(`  ${identity.aiName}: Hey ${identity.userName}! Let's build something amazing together. 🚀`));
+  if (providerAnswers.provider === 'ollama') {
+    console.log(chalk.hex('#00FF40')(`  ${identity.aiName}: Everything's running locally. No API costs, full privacy. Let's go.`));
+  } else if (['google', 'groq', 'deepseek'].includes(providerAnswers.provider)) {
+    console.log(chalk.hex('#00FF40')(`  ${identity.aiName}: Free tier set up. No credit card needed. Let's build something.`));
+  } else {
+    console.log(chalk.hex('#00FF40')(`  ${identity.aiName}: Hey ${identity.userName}! Ready when you are.`));
+  }
   console.log('');
 }
 
-setup().catch(err => { console.error(chalk.hex('#FF0000')('❌'), err.message); process.exit(1); });
+setup().catch(err => {
+  console.log('');
+  console.log(chalk.hex('#FF0000')('═'.repeat(60)));
+  console.log(chalk.hex('#FF0000').bold('  ❌ Setup failed'));
+  console.log(chalk.hex('#FF0000')('═'.repeat(60)));
+  console.log('');
+  console.log(chalk.hex('#FF0000')(`  Error: ${err.message}`));
+  console.log('');
+  console.log(chalk.hex('#888888')('  Troubleshooting:'));
+  console.log(chalk.hex('#888888')('  1. Make sure Node.js v18+ is installed: node --version'));
+  console.log(chalk.hex('#888888')('  2. Make sure npm is installed: npm --version'));
+  console.log(chalk.hex('#888888')('  3. Try running as administrator/sudo'));
+  console.log(chalk.hex('#888888')('  4. Check your internet connection'));
+  console.log(chalk.hex('#888888')('  5. Report at: https://github.com/Atum246/OpenDesktop/issues'));
+  console.log('');
+  process.exit(1);
+});
