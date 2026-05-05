@@ -59,6 +59,18 @@
 - [📊 Performance Monitor](#-performance-monitor)
 - [🔔 Notification Center](#-notification-center)
 - [⚙️ Config Manager](#️-config-manager)
+- [🧠 Neural Context Engine](#-neural-context-engine)
+- [👁️ Screen State Machine](#️-screen-state-machine)
+- [👻 Ghost Mode](#-ghost-mode)
+- [🌐 Device Mesh](#-device-mesh)
+- [🔍 Code Fingerprinting](#-code-fingerprinting)
+- [🎤 Voice Ambient Mode](#-voice-ambient-mode)
+- [🛡️ Adversarial Self-Testing](#️-adversarial-self-testing)
+- [🎬 Workflow Recorder](#-workflow-recorder)
+- [🧪 Model Distillation](#-model-distillation)
+- [📂 Semantic File System](#-semantic-file-system)
+- [👥 Real-Time Collaboration](#-real-time-collaboration)
+- [💬 Conversational Interface](#-conversational-interface)
 - [🐳 Docker](#-docker)
 - [🧪 Testing](#-testing)
 - [📁 Project Structure](#-project-structure)
@@ -129,6 +141,141 @@ opendesktop --setup
 | OS | Linux, macOS 12+, Windows 10+ | Latest |
 | RAM | 4GB | 8GB+ |
 | Network | Internet connection | Broadband |
+
+---
+
+## 🔑 Environment Variables
+
+OpenDesktop auto-detects API keys from your environment. Set them before running `opendesktop --setup` and it picks them up automatically — no manual entry.
+
+### AI Providers
+
+```bash
+# OpenRouter — access 50+ models with one key ($1 free credit)
+export OPENROUTER_API_KEY="sk-or-v1-xxxxxxxxxxxx"
+
+# OpenAI — GPT-4o, o1, DALL-E, Whisper
+export OPENAI_API_KEY="sk-xxxxxxxxxxxx"
+
+# Anthropic — Claude 3.5 Sonnet, Opus (best reasoning)
+export ANTHROPIC_API_KEY="sk-ant-xxxxxxxxxxxx"
+
+# Google AI — Gemini Pro, Flash (free tier available)
+export GOOGLE_API_KEY="AIzaxxxxxxxxxxxx"
+
+# Groq — Llama, Mixtral (fastest inference, free tier)
+export GROQ_API_KEY="gsk_xxxxxxxxxxxx"
+
+# DeepSeek — Coding specialist (free tier)
+export DEEPSEEK_API_KEY="sk-xxxxxxxxxxxx"
+
+# Nvidia NIM — Enterprise AI
+export NVIDIA_API_KEY="nvapi-xxxxxxxxxxxx"
+
+# Mistral AI
+export MISTRAL_API_KEY="xxxxxxxxxxxx"
+```
+
+### Messaging (Optional)
+
+```bash
+export TELEGRAM_BOT_TOKEN="123456:ABC-DEF"
+export DISCORD_BOT_TOKEN="xxxxxxxxxxxx"
+```
+
+### Other Services (Optional)
+
+```bash
+export ELEVENLABS_API_KEY="xxxxxxxxxxxx"
+export WEATHER_API_KEY="xxxxxxxxxxxx"
+```
+
+### Where to Add These
+
+| Shell | File | Command |
+|-------|------|---------|
+| Bash | `~/.bashrc` | `source ~/.bashrc` |
+| Zsh | `~/.zshrc` | `source ~/.zshrc` |
+| PowerShell | `$PROFILE` | `. $PROFILE` |
+| Windows cmd | System env | `setx KEY "value"` |
+
+See [.env.example](.env.example) for the full template with URLs to get each key.
+
+---
+
+## 🤖 What the Setup Wizard Auto-Detects
+
+When you run `opendesktop --setup`, it automatically finds:
+
+| What | How | You do |
+|------|-----|--------|
+| **Username** | Reads from OS | Nothing — pre-filled |
+| **Timezone** | System locale | Nothing — pre-selected |
+| **OS/Platform** | `os.platform()` | Nothing — shown in summary |
+| **RAM** | `os.totalmem()` | Nothing — warns if low |
+| **GPU** | `systeminformation` | Nothing — recommends local models if powerful |
+| **Ollama** | Checks `localhost:11434` | Nothing — appears first if running |
+| **LM Studio** | Checks `localhost:1234` | Nothing — appears first if running |
+| **API keys** | Checks environment vars | Nothing — auto-filled |
+
+**Just run `opendesktop --setup` and hit Enter through everything.** It figures out the rest.
+
+---
+
+## 🏠 Local AI (Free, Private, No API Key)
+
+### Ollama
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull models
+ollama pull llama3.1
+ollama pull codellama
+
+# Runs on localhost:11434 — OpenDesktop detects it automatically
+opendesktop --setup
+# Choose "Ollama — RUNNING LOCALLY" when asked for provider
+```
+
+### LM Studio
+
+1. Download from https://lmstudio.ai
+2. Load a model and start the server
+3. Runs on `localhost:1234` — OpenDesktop detects it automatically
+
+---
+
+## ⌨️ Hotkey
+
+The setup wizard lets you choose a global hotkey to summon OpenDesktop from anywhere:
+
+| Hotkey | Description |
+|--------|-------------|
+| `Ctrl+Shift+Space` | Recommended — fast and easy |
+| `Ctrl+Alt+O` | O for OpenDesktop |
+| `Ctrl+Shift+D` | D for Desktop |
+| `Alt+Space` | Quick launcher style |
+| `F12` | Classic dev tools |
+| Custom | Pick your own combination |
+
+Works system-wide — press it in any app to summon the agent.
+
+---
+
+## 💬 Messaging Platforms
+
+Connect OpenDesktop to chat from your phone or other devices:
+
+| Platform | Setup |
+|----------|-------|
+| **Telegram** | Get token from @BotFather, set `TELEGRAM_BOT_TOKEN` |
+| **Discord** | Get token from Developer Portal, set `DISCORD_BOT_TOKEN` |
+| **WhatsApp** | Enable in setup, scan QR code |
+| **Slack** | Get Bot Token + App Token |
+
+Run `opendesktop --setup` and enable the platforms you want.
 
 ---
 
@@ -905,6 +1052,245 @@ Real-time system monitoring:
 | `business` | Professional business environment |
 | `privacy` | Maximum privacy — local models only |
 | `power-user` | Everything enabled — full power |
+
+---
+
+## 🧠 Neural Context Engine
+
+A background reasoning thread that never sleeps. Continuously correlates past actions, predicts what you need next, and pre-loads context before you ask.
+
+- **Working Memory** — Keeps relevant context primed and ready
+- **Prediction Graph** — Learns action sequences and predicts next steps
+- **Behavior Model** — Tracks time patterns, app sequences, project focus
+- **Semantic Index** — Connects related concepts automatically
+- **Auto-Priming** — Pre-loads contexts based on predictions
+
+```
+/context              View engine status
+/context-query <q>    Query primed context
+/context-prime <c>    Manually prime a context
+```
+
+---
+
+## 👁️ Screen State Machine
+
+Watches your screen in real-time, understands UI state, and maintains a rolling "world model" of your desktop. Enables visual workflow replay.
+
+- **State Tracking** — Captures and compares screen states
+- **Element Detection** — Find any UI element by description
+- **Click by Description** — "Click the login button" just works
+- **State Diffing** — Compares screenshots, detects changes
+- **Workflow Recording** — Record screen interactions for replay
+
+```
+/screen-state         View state machine status
+/screen-watch         Start watching
+/screen-stop          Stop watching
+/find-element <desc>  Find a UI element
+/click-element <desc> Click an element
+/screen-diff          Compare last two states
+```
+
+---
+
+## 👻 Ghost Mode
+
+Set the agent loose while you sleep. Give it a mission and it spawns agents, works through the night, and has a morning briefing ready.
+
+- **Autonomous Missions** — Define tasks, set constraints, let it work
+- **Rollback Safety** — Checkpoints after every task, undo anything
+- **Agent Spawning** — Deploys specialized sub-agents for parallel work
+- **Safety Modes** — Safe, supervised, or full control
+- **Morning Briefing** — Get a report of what was accomplished
+
+```
+/ghost                Ghost mode status
+/ghost-start <desc>   Start a mission
+/ghost-stop           Stop active mission
+/ghost-briefing       Get mission briefing
+```
+
+---
+
+## 🌐 Device Mesh
+
+Your laptop, phone, server, and Raspberry Pi become nodes in a single agent swarm. Context syncs across devices with end-to-end encryption.
+
+- **Peer Discovery** — Find and connect to other OpenDesktop instances
+- **Context Sharing** — Sync context across all your devices
+- **Task Distribution** — Send tasks to the best available device
+- **E2E Encrypted** — AES-256-GCM encrypted P2P communication
+- **Resource Awareness** — Knows which device has GPU, storage, always-on
+
+```
+/mesh                 Mesh topology status
+/mesh-connect <h:p>   Connect to a peer
+/mesh-share <k> [v]   Share context with peers
+```
+
+---
+
+## 🔍 Code Fingerprinting
+
+Every piece of code gets a semantic fingerprint — understanding WHY it was written, what problem it solves, and how it relates to everything else.
+
+- **Semantic Analysis** — Detects language, purpose, patterns, complexity
+- **Intent Chain Tracing** — Trace back why code exists
+- **Decision Timeline** — See every decision made about a file
+- **Pattern Detection** — Finds common patterns across codebase
+- **Related Code Discovery** — Find code that solves similar problems
+
+```
+/fingerprint <file>   Analyze and fingerprint a file
+/trace-intent <hash>  Trace the intent chain
+/code-decisions <f>   View decision timeline
+/pattern-stats        Codebase pattern statistics
+```
+
+---
+
+## 🎤 Voice Ambient Mode
+
+A persistent voice interface with wake word detection, natural interruption handling, and voice cloning.
+
+- **Wake Word Detection** — Say "hey desktop" to activate
+- **Natural Interruption** — Talk over the agent, it stops and listens
+- **Voice Cloning** — Clone any voice from audio samples
+- **Conversation Memory** — Remembers voice context across turns
+- **Continuous Listening** — Always ready when you need it
+
+```
+/ambient              Ambient mode status
+/ambient-start        Start listening
+/ambient-stop         Stop listening
+/voices               List available voices
+/clone-voice          Clone a voice from audio
+```
+
+---
+
+## 🛡️ Adversarial Self-Testing
+
+The agent actively tries to break itself — fuzzing its own commands, testing edge cases, and patching vulnerabilities automatically.
+
+- **Injection Testing** — SQL, XSS, command injection, path traversal
+- **Boundary Testing** — Empty inputs, null values, overflow
+- **Resource Exhaustion** — Memory, recursion, regex (ReDoS)
+- **State Corruption** — Prototype pollution, circular references
+- **Race Conditions** — Concurrent operation safety
+- **Auto-Fix** — Patches vulnerabilities automatically
+
+```
+/red-team             Run full adversarial audit
+/vuln-report          Vulnerability report
+/test-history         Test history
+```
+
+---
+
+## 🎬 Workflow Recorder
+
+Record workflows once, replay them intelligently. Not just scripts — adaptive workflows that handle variations.
+
+- **Record & Replay** — Capture interactions, replay them exactly
+- **Adaptive Execution** — Handles variations in UI state
+- **Variables & Conditions** — Dynamic workflows with logic
+- **Share & Export** — Share workflows as JSON files
+- **Dry Run** — Test workflows without executing
+
+```
+/record <name>        Start recording
+/record-stop          Stop and save
+/replay <name>        Dry-run replay
+/replay-run <name>    Execute replay
+/workflows-list       List all workflows
+/workflow-export <n>  Export workflow to file
+```
+
+---
+
+## 🧪 Model Distillation
+
+Observes which models are best at which tasks, then routes to optimal models. Gets faster and cheaper the more you use it.
+
+- **Task Routing** — Automatically picks the best model per task type
+- **Performance Tracking** — Tracks success rate, latency, cost per model
+- **Cost Optimization** — Routes to cheaper models when quality is equal
+- **Training Pipeline** — Exports data for fine-tuning local models
+- **Model Comparison** — Side-by-side performance metrics
+
+```
+/distill              Distillation status
+/model-optimal <t>    Best model for task type
+/distill-report       Ready-for-training report
+/model-compare <t>    Compare models for task
+```
+
+---
+
+## 📂 Semantic File System
+
+Not just search by name — a semantic index of everything on disk. "Find that contract from last month about the API integration."
+
+- **Meaning-Based Search** — Search by what files ARE, not what they're named
+- **Auto-Tagging** — Automatically tags files by type, content, location
+- **Related Files** — Find files related to any file
+- **Smart Suggestions** — Suggests files based on context
+- **Concept Index** — Groups files by programming concepts
+
+```
+/semantic-search <q>  Search files by meaning
+/semantic-scan [dir]  Scan and index a directory
+/file-related <f>     Find related files
+/file-suggest [f]     Get file suggestions
+/file-tags            List all tags
+/fs-stats             Filesystem statistics
+```
+
+---
+
+## 👥 Real-Time Collaboration
+
+Multiple users, one agent instance. Like Google Docs but for AI-assisted work.
+
+- **Shared Sessions** — Create a session, share the ID
+- **Live Cursors** — See where each user is looking
+- **Role Permissions** — Host, editor, viewer roles
+- **In-Session Chat** — Chat within the collaboration
+- **Action Broadcasting** — All participants see actions in real-time
+
+```
+/collab               Collaboration status
+/collab-create [name] Create a session
+/collab-join <id>     Join a session
+/collab-sessions      List active sessions
+/collab-chat <msg>    Send chat message
+```
+
+---
+
+## 💬 Conversational Interface
+
+Talking to OpenDesktop feels like talking to a real person, not a command line.
+
+- **Mood Detection** — Knows if you're frustrated, rushed, curious, happy
+- **Adaptive Responses** — Matches your energy and style
+- **Natural Language** — Just say what you want, no commands needed
+- **Follow-Up Support** — "and also do the other thing" works
+- **No AI Tics** — Strips "Certainly!" and "I'd be happy to help!"
+- **Proactive Actions** — Detects intent and acts without asking
+
+```
+You: open chrome and go to github
+OD:  Done. Chrome is open on GitHub.
+
+You: what's the weather in tokyo
+OD:  22°C, partly cloudy. Good day to be outside.
+
+You: and what about tomorrow
+OD:  Tomorrow: 18°C, rain in the afternoon. Bring an umbrella.
+```
 
 ---
 
