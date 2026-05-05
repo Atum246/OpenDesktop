@@ -14,6 +14,28 @@ const PROFILE_FILE = path.join(CONFIG_DIR, 'user-profile.json');
 
 function ensureDir(d) { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); }
 
+function checkCommandExists(cmd) {
+  return new Promise(resolve => {
+    const { exec } = require('child_process');
+    const check = detected.platform === 'win32' ? `where ${cmd}` : `which ${cmd}`;
+    exec(check, (err) => resolve(!err));
+  });
+}
+
+function runCommand(cmd) {
+  return new Promise((resolve, reject) => {
+    const { exec } = require('child_process');
+    const child = exec(cmd, { timeout: 300000, shell: true }, (err, stdout, stderr) => {
+      if (err) reject(err);
+      else resolve(stdout);
+    });
+    child.stdout?.on('data', (data) => process.stdout.write(data));
+    child.stderr?.on('data', (data) => process.stderr.write(data));
+  });
+}
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
 async function setup() {
   console.clear();
 
@@ -220,51 +242,97 @@ async function setup() {
   console.log(chalk.hex('#FF0000')('═'.repeat(60)));
   console.log('');
 
-  // Build smart provider list based on what's detected
-  const providerChoices = [];
+  // Show what's available for free
   const envKeyProviders = Object.keys(detected.envKeys);
-
-  // If local providers are running, put them first
+  
   if (detected.ollamaRunning) {
-    providerChoices.push({ name: `🏠 Ollama — RUNNING LOCALLY (${detected.ollamaModels.length} models found) — Free, private, fast`, value: 'ollama' });
+    console.log(chalk.hex('#00FF40')(`  Ollama is running with ${detected.ollamaModels.length} models — 100% free!\n`));
+  } else if (detected.hasGpu) {
+    console.log(chalk.hex('#00FF40')(`  GPU detected: ${detected.gpu}`));
+    console.log(chalk.hex('#00FF40')(`  You can run AI models locally for FREE with Ollama!\n`));
+  } else if (detected.ramGB >= 8) {
+    console.log(chalk.hex('#00FFFF')(`  ${detected.ramGB}GB RAM — You can run smaller local models with Ollama.\n`));
   }
+
+  // Build provider list organized by cost
+  const providerChoices = [];
+
+  // ─── FREE LOCAL ───
+  providerChoices.push(new inquirer.Separator(chalk.hex('#00FF40')('─── 100% FREE — Runs on your machine (no API key needed) ───')));
+  
+  if (detected.ollamaRunning) {
+    providerChoices.push({ 
+      name: chalk.green(`🏠 Ollama — RUNNING (${detected.ollamaModels.length} models: ${detected.ollamaModels.slice(0, 3).join(', ')}${detected.ollamaModels.length > 3 ? '...' : ''})`), 
+      value: 'ollama' 
+    });
+  } else {
+    const ollamaNote = detected.hasGpu ? ' — You have a GPU, this will run great!' : detected.ramGB >= 8 ? ` — Works with ${detected.ramGB}GB RAM` : ' — Needs 8GB+ RAM';
+    providerChoices.push({ 
+      name: chalk.green(`🏠 Ollama — FREE, private, runs locally${ollamaNote}`), 
+      value: 'ollama' 
+    });
+  }
+  
   if (detected.lmstudioRunning) {
-    providerChoices.push({ name: '🏠 LM Studio — RUNNING LOCALLY — Free, private', value: 'lmstudio' });
+    providerChoices.push({ 
+      name: chalk.green('🏠 LM Studio — RUNNING locally — Free, private'), 
+      value: 'lmstudio' 
+    });
+  } else {
+    providerChoices.push({ 
+      name: chalk.green('🏠 LM Studio — FREE, private, GUI for local models'), 
+      value: 'lmstudio' 
+    });
   }
 
-  // If API keys found in env, mark those providers
-  const providerInfo = {
-    openrouter: { icon: '🌐', label: 'OpenRouter', note: 'Access 50+ models with one key' },
-    openai: { icon: '🧠', label: 'OpenAI', note: 'GPT-4o, o1 (most capable)' },
-    anthropic: { icon: '📚', label: 'Anthropic', note: 'Claude 3.5 (best reasoning)' },
-    google: { icon: '💎', label: 'Google', note: 'Gemini (fast & free tier)' },
-    groq: { icon: '⚡', label: 'Groq', note: 'Llama/Mixtral (fastest inference)' },
-    nvidia: { icon: '🟢', label: 'Nvidia NIM', note: 'Enterprise AI' },
-    deepseek: { icon: '🐋', label: 'DeepSeek', note: 'Coding specialist' }
-  };
+  // ─── FREE CLOUD ───
+  providerChoices.push(new inquirer.Separator(chalk.hex('#00FFFF')('─── FREE TIER — Cloud models, no payment required ───')));
+  
+  const freeProviders = [
+    { id: 'google', icon: '💎', label: 'Google Gemini', note: 'Free tier — Gemini 1.5 Flash (fast, generous limits)', free: true },
+    { id: 'groq', icon: '⚡', label: 'Groq', note: 'Free tier — Llama 3.1, Mixtral (fastest inference)', free: true },
+    { id: 'deepseek', icon: '🐋', label: 'DeepSeek', note: 'Free tier — DeepSeek Chat/Coder (great for code)', free: true },
+  ];
 
-  for (const [id, info] of Object.entries(providerInfo)) {
-    const hasKey = envKeyProviders.includes(id);
-    const keyNote = hasKey ? ' — API KEY FOUND IN ENV' : '';
-    providerChoices.push({ name: `${info.icon} ${info.label} — ${info.note}${keyNote}`, value: id });
+  for (const p of freeProviders) {
+    const hasKey = envKeyProviders.includes(p.id);
+    const keyNote = hasKey ? chalk.green(' — API KEY FOUND') : '';
+    providerChoices.push({ 
+      name: `${p.icon} ${p.label} — ${p.note}${keyNote}`, 
+      value: p.id 
+    });
   }
 
-  if (!detected.ollamaRunning && !detected.lmstudioRunning) {
-    providerChoices.push({ name: '🏠 Ollama — 100% local (not detected — install from ollama.ai)', value: 'ollama' });
-    providerChoices.push({ name: '🏠 LM Studio — Local models (not detected)', value: 'lmstudio' });
+  // ─── PAID CLOUD ───
+  providerChoices.push(new inquirer.Separator(chalk.hex('#888888')('─── PAID — API key required ───')));
+  
+  const paidProviders = [
+    { id: 'openrouter', icon: '🌐', label: 'OpenRouter', note: 'Access 50+ models with one key ($1 free credit)' },
+    { id: 'openai', icon: '🧠', label: 'OpenAI', note: 'GPT-4o, o1 (most capable)' },
+    { id: 'anthropic', icon: '📚', label: 'Anthropic', note: 'Claude 3.5 Sonnet (best reasoning)' },
+    { id: 'nvidia', icon: '🟢', label: 'Nvidia NIM', note: 'Enterprise AI' },
+  ];
+
+  for (const p of paidProviders) {
+    const hasKey = envKeyProviders.includes(p.id);
+    const keyNote = hasKey ? chalk.green(' — API KEY FOUND') : '';
+    providerChoices.push({ 
+      name: `${p.icon} ${p.label} — ${p.note}${keyNote}`, 
+      value: p.id 
+    });
   }
 
-  providerChoices.push({ name: '🔧 Custom endpoint', value: 'custom' });
   providerChoices.push(new inquirer.Separator());
+  providerChoices.push({ name: '🔧 Custom endpoint', value: 'custom' });
   providerChoices.push({ name: '⏭️ Skip (configure later)', value: 'skip' });
 
-  // Determine best default provider
-  let defaultProvider = 'openrouter';
+  // Default: pick the best free option
+  let defaultProvider = 'google'; // Google free tier is the easiest start
   if (detected.ollamaRunning) defaultProvider = 'ollama';
   else if (detected.lmstudioRunning) defaultProvider = 'lmstudio';
-  else if (detected.envKeys.openrouter) defaultProvider = 'openrouter';
-  else if (detected.envKeys.openai) defaultProvider = 'openai';
-  else if (detected.envKeys.anthropic) defaultProvider = 'anthropic';
+  else if (detected.envKeys.google) defaultProvider = 'google';
+  else if (detected.envKeys.groq) defaultProvider = 'groq';
+  else if (detected.envKeys.deepseek) defaultProvider = 'deepseek';
 
   const providerAnswers = await inquirer.prompt([
     { type: 'list', name: 'provider', message: chalk.hex('#FFD700')('🤖 Which AI should power me?'), choices: providerChoices, default: defaultProvider },
@@ -272,39 +340,207 @@ async function setup() {
       when: a => !['skip', 'ollama', 'lmstudio'].includes(a.provider),
       default: a => detected.envKeys[a.provider] || undefined },
     { type: 'input', name: 'endpoint', message: chalk.hex('#FFD700')('🔗 Endpoint URL:'),
-      when: a => ['custom', 'ollama', 'lmstudio'].includes(a.provider),
-      default: a => a.provider === 'ollama' ? 'http://localhost:11434' : a.provider === 'lmstudio' ? 'http://localhost:1234' : '' },
-    { type: 'list', name: 'model', message: chalk.hex('#FFD700')('🎯 Default model:'),
-      when: a => a.provider !== 'skip',
-      choices: a => {
-        // If Ollama, show actually installed models
-        if (a.provider === 'ollama' && detected.ollamaModels.length > 0) {
-          return detected.ollamaModels.map(m => ({ name: `${m} (installed)`, value: m }));
-        }
-        const models = {
-          openrouter: ['anthropic/claude-3.5-sonnet','openai/gpt-4o','google/gemini-pro-1.5','meta-llama/llama-3.1-405b-instruct','deepseek/deepseek-chat'],
-          openai: ['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1-preview','o1-mini'],
-          anthropic: ['claude-3.5-sonnet-20241022','claude-3-opus-20240229','claude-3-haiku-20240307'],
-          google: ['gemini-1.5-pro','gemini-1.5-flash','gemini-pro'],
-          groq: ['llama-3.1-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'],
-          nvidia: ['meta/llama-3.1-405b-instruct','meta/llama-3.1-70b-instruct'],
-          deepseek: ['deepseek-chat','deepseek-coder','deepseek-reasoner'],
-          ollama: ['llama3.1','llama3.1:70b','codellama','mistral','qwen2','deepseek-coder-v2'],
-          lmstudio: ['local-model'],
-          custom: ['custom-model']
-        };
-        return (models[a.provider] || ['default']).map(m => ({ name: m, value: m }));
-      }
-    }
+      when: a => ['custom', 'lmstudio'].includes(a.provider),
+      default: a => a.provider === 'lmstudio' ? 'http://localhost:1234' : '' },
   ]);
 
-  // Skip API key prompt if key was found in env and user didn't change it
+  // ═══════════════════════════════════════════════════
+  //  STEP 3b: LOCAL MODEL SETUP — Install & configure if needed
+  // ═══════════════════════════════════════════════════
+  let selectedModel = null;
+
+  if (providerAnswers.provider === 'ollama') {
+    // Check if Ollama is installed
+    const ollamaInstalled = await checkCommandExists('ollama');
+
+    if (!ollamaInstalled) {
+      console.log('');
+      console.log(chalk.hex('#FFFF00')('  Ollama is not installed on this system.'));
+      const installOllama = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'install',
+        message: chalk.hex('#FFD700')('📦 Install Ollama now? (free, ~500MB)'),
+        default: true
+      }]);
+
+      if (installOllama.install) {
+        console.log(chalk.hex('#00FFFF')('  Installing Ollama...'));
+        try {
+          if (detected.platform === 'win32') {
+            console.log(chalk.hex('#00FFFF')('  Downloading Ollama for Windows...'));
+            console.log(chalk.hex('#888888')('  A browser window will open. Download and install, then come back here.'));
+            await runCommand('start https://ollama.ai/download');
+            await inquirer.prompt([{ type: 'confirm', name: 'done', message: chalk.hex('#FFD700')('Installed Ollama? Press Enter when ready'), default: true }]);
+          } else {
+            await runCommand('curl -fsSL https://ollama.ai/install.sh | sh');
+            console.log(chalk.hex('#00FF40')('  Ollama installed!'));
+          }
+        } catch (err) {
+          console.log(chalk.hex('#FF0000')(`  Install failed: ${err.message}`));
+          console.log(chalk.hex('#888888')('  Install manually from: https://ollama.ai'));
+        }
+      }
+    }
+
+    // Check if Ollama is running, try to start it
+    let ollamaReady = detected.ollamaRunning;
+    if (!ollamaReady) {
+      try {
+        console.log(chalk.hex('#00FFFF')('  Starting Ollama...'));
+        if (detected.platform !== 'win32') {
+          await runCommand('ollama serve &');
+          await sleep(3000);
+        }
+        // Check again
+        const http = require('http');
+        ollamaReady = await new Promise(resolve => {
+          http.get('http://localhost:11434/api/tags', { timeout: 3000 }, (res) => {
+            resolve(true);
+          }).on('error', () => resolve(false));
+        });
+      } catch (e) {}
+    }
+
+    if (ollamaReady || detected.ollamaRunning) {
+      // Get available models or let user pick
+      let availableModels = detected.ollamaModels;
+      if (availableModels.length === 0) {
+        console.log('');
+        console.log(chalk.hex('#00FFFF')('  No models found. Let\'s pull some!'));
+        console.log('');
+
+        const modelChoices = [
+          new inquirer.Separator(chalk.hex('#00FF40')('─── Recommended for your system ───')),
+        ];
+
+        // Recommend based on RAM and GPU
+        if (detected.hasGpu) {
+          modelChoices.push({ name: '🚀 llama3.1:70b — Best quality (needs ~40GB VRAM)', value: 'llama3.1:70b' });
+          modelChoices.push({ name: '⚡ llama3.1 — Great all-rounder (4.7GB)', value: 'llama3.1' });
+          modelChoices.push({ name: '💻 codellama — Best for coding (3.8GB)', value: 'codellama' });
+          modelChoices.push({ name: '🧠 mixtral — Mixture of experts (26GB)', value: 'mixtral' });
+        } else if (detected.ramGB >= 16) {
+          modelChoices.push({ name: '⚡ llama3.1 — Recommended (4.7GB)', value: 'llama3.1' });
+          modelChoices.push({ name: '💻 codellama — Great for coding (3.8GB)', value: 'codellama' });
+          modelChoices.push({ name: '🔮 mistral — Fast and capable (4.1GB)', value: 'mistral' });
+          modelChoices.push({ name: '🌏 qwen2 — Good multilingual (4.4GB)', value: 'qwen2' });
+        } else {
+          modelChoices.push({ name: '⚡ llama3.1:8b — Smallest, still good (4.7GB)', value: 'llama3.1:8b' });
+          modelChoices.push({ name: '💻 codellama:7b — Small coding model (3.8GB)', value: 'codellama:7b' });
+          modelChoices.push({ name: '🔮 phi3 — Tiny but capable (2.2GB)', value: 'phi3' });
+        }
+
+        modelChoices.push(new inquirer.Separator(chalk.hex('#888888')('─── Other options ───')));
+        modelChoices.push({ name: '🌐 deepseek-coder-v2 — Best coding model (8.9GB)', value: 'deepseek-coder-v2' });
+        modelChoices.push({ name: '🎯 llama3.1 — Meta\'s latest (4.7GB)', value: 'llama3.1' });
+        modelChoices.push({ name: '📝 codellama — Code specialist (3.8GB)', value: 'codellama' });
+
+        const modelChoice = await inquirer.prompt([{
+          type: 'checkbox',
+          name: 'models',
+          message: chalk.hex('#FFD700')('📦 Which models to download? (select one or more):'),
+          choices: modelChoices,
+          validate: v => v.length > 0 || 'Select at least one model'
+        }]);
+
+        // Pull selected models
+        for (const model of modelChoice.models) {
+          console.log(chalk.hex('#00FFFF')(`\n  Pulling ${model}... (this may take a few minutes)`));
+          try {
+            await runCommand(`ollama pull ${model}`);
+            console.log(chalk.hex('#00FF40')(`  ✅ ${model} downloaded!`));
+            availableModels.push(model);
+          } catch (err) {
+            console.log(chalk.hex('#FF0000')(`  Failed to pull ${model}: ${err.message}`));
+          }
+        }
+      }
+
+      // Select default model
+      if (availableModels.length > 0) {
+        const modelSelect = await inquirer.prompt([{
+          type: 'list',
+          name: 'model',
+          message: chalk.hex('#FFD700')('🎯 Default model:'),
+          choices: availableModels.map(m => ({ name: `${m} (installed)`, value: m }))
+        }]);
+        selectedModel = modelSelect.model;
+      }
+    } else {
+      console.log(chalk.hex('#FFFF00')('  Could not start Ollama. Make sure it\'s running: ollama serve'));
+      console.log(chalk.hex('#888888')('  You can configure it later with: opendesktop --setup'));
+    }
+  }
+
+  if (providerAnswers.provider === 'lmstudio') {
+    const lmstudioReady = detected.lmstudioRunning;
+    if (!lmstudioReady) {
+      console.log('');
+      console.log(chalk.hex('#FFFF00')('  LM Studio is not running.'));
+      console.log(chalk.hex('#888888')('  1. Download from: https://lmstudio.ai'));
+      console.log(chalk.hex('#888888')('  2. Load a model in the app'));
+      console.log(chalk.hex('#888888')('  3. Start the local server (green play button)'));
+      console.log(chalk.hex('#888888')('  4. Re-run: opendesktop --setup'));
+      console.log('');
+    }
+  }
+
+  // For cloud providers, select model
+  if (!selectedModel && !['ollama', 'lmstudio', 'skip'].includes(providerAnswers.provider)) {
+    const modelList = {
+      google: [
+        { name: '💎 gemini-1.5-flash — Free, fast, recommended', value: 'gemini-1.5-flash' },
+        { name: '🧠 gemini-1.5-pro — Free, more capable', value: 'gemini-1.5-pro' },
+        { name: '⚡ gemini-pro — Free, older', value: 'gemini-pro' }
+      ],
+      groq: [
+        { name: '⚡ llama-3.1-70b-versatile — Free, best quality', value: 'llama-3.1-70b-versatile' },
+        { name: '🚀 llama-3.1-8b-instant — Free, fastest', value: 'llama-3.1-8b-instant' },
+        { name: '🧠 mixtral-8x7b-32768 — Free, long context', value: 'mixtral-8x7b-32768' }
+      ],
+      deepseek: [
+        { name: '💬 deepseek-chat — Free, general purpose', value: 'deepseek-chat' },
+        { name: '💻 deepseek-coder — Free, best for code', value: 'deepseek-coder' },
+        { name: '🧠 deepseek-reasoner — Free, best reasoning', value: 'deepseek-reasoner' }
+      ],
+      openrouter: [
+        { name: 'anthropic/claude-3.5-sonnet', value: 'anthropic/claude-3.5-sonnet' },
+        { name: 'openai/gpt-4o', value: 'openai/gpt-4o' },
+        { name: 'google/gemini-pro-1.5', value: 'google/gemini-pro-1.5' },
+        { name: 'meta-llama/llama-3.1-405b-instruct', value: 'meta-llama/llama-3.1-405b-instruct' },
+        { name: 'deepseek/deepseek-chat', value: 'deepseek/deepseek-chat' }
+      ],
+      openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'o1-preview', 'o1-mini'],
+      anthropic: ['claude-3.5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'],
+      nvidia: ['meta/llama-3.1-405b-instruct', 'meta/llama-3.1-70b-instruct'],
+      custom: ['custom-model']
+    };
+
+    const models = modelList[providerAnswers.provider] || ['default'];
+    const modelChoices = models.map(m => typeof m === 'string' ? { name: m, value: m } : m);
+
+    const modelAnswer = await inquirer.prompt([{
+      type: 'list',
+      name: 'model',
+      message: chalk.hex('#FFD700')('🎯 Default model:'),
+      choices: modelChoices
+    }]);
+    selectedModel = modelAnswer.model;
+  }
+
+  // Skip API key prompt if key was found in env
   if (!providerAnswers.apiKey && detected.envKeys[providerAnswers.provider]) {
     providerAnswers.apiKey = detected.envKeys[providerAnswers.provider];
     console.log(chalk.hex('#00FF40')(`  ✅ Using API key from environment variable\n`));
   }
 
-  const defaultModels = { openrouter: 'anthropic/claude-3.5-sonnet', openai: 'gpt-4o', anthropic: 'claude-3.5-sonnet-20241022', google: 'gemini-1.5-pro', groq: 'llama-3.1-70b-versatile', nvidia: 'meta/llama-3.1-405b-instruct', deepseek: 'deepseek-chat', ollama: 'llama3.1' };
+  // Show free tier info
+  if (['google', 'groq', 'deepseek'].includes(providerAnswers.provider)) {
+    console.log(chalk.hex('#00FF40')(`\n  ✅ Great choice! ${providerAnswers.provider} has a generous free tier.`));
+    console.log(chalk.hex('#888888')('  No credit card needed. Just use it.\n'));
+  }
+
+  const defaultModels = { openrouter: 'anthropic/claude-3.5-sonnet', openai: 'gpt-4o', anthropic: 'claude-3.5-sonnet-20241022', google: 'gemini-1.5-flash', groq: 'llama-3.1-70b-versatile', nvidia: 'meta/llama-3.1-405b-instruct', deepseek: 'deepseek-chat', ollama: 'llama3.1', lmstudio: 'local-model' };
 
   // ═══════════════════════════════════════════════════
   //  STEP 4: CAPABILITIES — What can I do?
@@ -415,7 +651,7 @@ async function setup() {
       name: providerAnswers.provider === 'skip' ? 'openrouter' : providerAnswers.provider,
       apiKey: providerAnswers.apiKey || null,
       endpoint: providerAnswers.endpoint || null,
-      model: providerAnswers.model || defaultModels[providerAnswers.provider] || 'anthropic/claude-3.5-sonnet'
+      model: selectedModel || providerAnswers.model || defaultModels[providerAnswers.provider] || 'anthropic/claude-3.5-sonnet'
     },
     features: {
       voice: features.voice,
